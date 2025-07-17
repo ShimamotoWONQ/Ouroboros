@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+
+from typing import Any, Dict, List
+from .lexer import TokenType
+from .ast_nodes import *
+from .errors import RuntimeError
+
+class Evaluator:
+    def __init__(self, variables: Dict[str, Any], functions: Dict[str, Any], stdlib, interpreter):
+        self.variables = variables
+        self.functions = functions
+        self.stdlib = stdlib
+        self.interpreter = interpreter
+    
+    def get_variable(self, name: str) -> Any:
+        return self.interpreter.get_variable(name)
+    
+    def set_variable(self, name: str, value: Any):
+        self.interpreter.set_variable(name, value)
+    
+    def evaluate(self, node: Expression) -> Any:
+        if isinstance(node, Literal):
+            return node.value
+        
+        elif isinstance(node, Identifier):
+            return self.get_variable(node.name)
+        
+        elif isinstance(node, BinaryOp):
+            return self.evaluate_binary_op(node)
+        
+        elif isinstance(node, UnaryOp):
+            return self.evaluate_unary_op(node)
+        
+        elif isinstance(node, FunctionCall):
+            return self.evaluate_function_call(node)
+        
+        elif isinstance(node, ArrayAccess):
+            array = self.evaluate(node.array)
+            index = self.evaluate(node.index)
+            if isinstance(array, list):
+                return array[int(index)]
+            else:
+                raise RuntimeError(f"Cannot index non-array value")
+        
+        elif isinstance(node, PostfixOp):
+            return self.evaluate_postfix_op(node)
+        
+        else:
+            raise RuntimeError(f"Unknown expression type: {type(node)}")
+    
+    def evaluate_binary_op(self, node: BinaryOp) -> Any:
+        left = self.evaluate(node.left)
+        right = self.evaluate(node.right)
+        
+        if node.op == TokenType.PLUS:
+            return left + right
+        elif node.op == TokenType.MINUS:
+            return left - right
+        elif node.op == TokenType.MULTIPLY:
+            return left * right
+        elif node.op == TokenType.DIVIDE:
+            if right == 0:
+                raise RuntimeError("Division by zero")
+            return left // right if isinstance(left, int) and isinstance(right, int) else left / right
+        elif node.op == TokenType.MODULO:
+            return left % right
+        elif node.op == TokenType.EQUAL:
+            return 1 if left == right else 0
+        elif node.op == TokenType.NOT_EQUAL:
+            return 1 if left != right else 0
+        elif node.op == TokenType.LESS:
+            return 1 if left < right else 0
+        elif node.op == TokenType.LESS_EQUAL:
+            return 1 if left <= right else 0
+        elif node.op == TokenType.GREATER:
+            return 1 if left > right else 0
+        elif node.op == TokenType.GREATER_EQUAL:
+            return 1 if left >= right else 0
+        elif node.op == TokenType.LOGICAL_AND:
+            return 1 if left and right else 0
+        elif node.op == TokenType.LOGICAL_OR:
+            return 1 if left or right else 0
+        elif node.op == TokenType.BITWISE_AND:
+            return int(left) & int(right)
+        elif node.op == TokenType.BITWISE_OR:
+            return int(left) | int(right)
+        elif node.op == TokenType.BITWISE_XOR:
+            return int(left) ^ int(right)
+        else:
+            raise RuntimeError(f"Unknown binary operator: {node.op}")
+    
+    def evaluate_unary_op(self, node: UnaryOp) -> Any:
+        operand = node.operand
+        
+        if node.op == TokenType.MINUS:
+            return -self.evaluate(operand)
+        elif node.op == TokenType.PLUS:
+            return self.evaluate(operand)
+        elif node.op == TokenType.LOGICAL_NOT:
+            return 1 if not self.evaluate(operand) else 0
+        elif node.op == TokenType.INCREMENT:
+            if isinstance(operand, Identifier):
+                current_value = self.get_variable(operand.name)
+                new_value = current_value + 1
+                self.set_variable(operand.name, new_value)
+                return new_value
+            else:
+                raise RuntimeError("Invalid operand for prefix increment")
+        elif node.op == TokenType.DECREMENT:
+            if isinstance(operand, Identifier):
+                current_value = self.get_variable(operand.name)
+                new_value = current_value - 1
+                self.set_variable(operand.name, new_value)
+                return new_value
+            else:
+                raise RuntimeError("Invalid operand for prefix decrement")
+        else:
+            raise RuntimeError(f"Unknown unary operator: {node.op}")
+    
+    def evaluate_postfix_op(self, node: PostfixOp) -> Any:
+        operand = node.operand
+        
+        if node.op == TokenType.INCREMENT:
+            if isinstance(operand, Identifier):
+                current_value = self.get_variable(operand.name)
+                self.set_variable(operand.name, current_value + 1)
+                return current_value
+            else:
+                raise RuntimeError("Invalid operand for postfix increment")
+        elif node.op == TokenType.DECREMENT:
+            if isinstance(operand, Identifier):
+                current_value = self.get_variable(operand.name)
+                self.set_variable(operand.name, current_value - 1)
+                return current_value
+            else:
+                raise RuntimeError("Invalid operand for postfix decrement")
+        else:
+            raise RuntimeError(f"Unknown postfix operator: {node.op}")
+    
+    def evaluate_function_call(self, node: FunctionCall) -> Any:
+        args = [self.evaluate(arg) for arg in node.args]
+        
+        if node.name in self.stdlib.functions:
+            return self.stdlib.call_function(node.name, args)
+        elif node.name in self.functions:
+            return self.functions[node.name].call(args, self.interpreter)
+        else:
+            raise RuntimeError(f"Undefined function: {node.name}")
