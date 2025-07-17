@@ -116,7 +116,26 @@ class Parser:
         if self.current_token.type == TokenType.LPAREN:
             return self.function_definition(var_type, name)
         else:
-            return self.variable_declaration(var_type, name)
+            return self.multiple_variable_declaration(var_type, name)
+    
+    def multiple_variable_declaration(self, var_type: str, first_name: str) -> Block:
+        """Handle multiple variable declarations like: int a = 1, b = 2, c;"""
+        declarations = []
+        
+        # First variable
+        declarations.append(self.variable_declaration(var_type, first_name))
+        
+        # Additional variables
+        while self.current_token.type == TokenType.COMMA:
+            self.eat(TokenType.COMMA)
+            var_name = self.current_token.value
+            self.eat(TokenType.IDENTIFIER)
+            declarations.append(self.variable_declaration(var_type, var_name))
+        
+        if len(declarations) == 1:
+            return declarations[0]
+        else:
+            return Block(declarations)
     
     def variable_declaration(self, var_type: str, name: str) -> Declaration:
         dimensions = []
@@ -284,12 +303,8 @@ class Parser:
         return Block(statements)
     
     def expression_statement(self) -> ExpressionStatement:
-        try:
-            expr = self.expression()
-            return ExpressionStatement(expr)
-        except Exception as e:
-            # Better error handling for complex expressions
-            self.error(f"Error in expression: {str(e)}")
+        expr = self.assignment_expression()
+        return ExpressionStatement(expr)
 
     
     def expression(self) -> Expression:
@@ -457,4 +472,4 @@ class Parser:
             return node
         
         else:
-            self.error(f"Unexpected token: {token.type}")
+            self.error(f"Unexpected token in expression: {token.type}")

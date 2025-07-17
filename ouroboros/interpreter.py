@@ -110,7 +110,9 @@ class OuroborosInterpreter:
     def execute_block(self, node: Block) -> Any:
         result = None
         for statement in node.statements:
-            result = self.execute_statement(statement)
+            stmt_result = self.execute_statement(statement)
+            if stmt_result is not None:
+                result = stmt_result
         return result
     
     def execute_declaration(self, node: Declaration) -> Any:
