@@ -4,9 +4,7 @@ Ouroboros - C language interpreter written in Python
 """
 
 from typing import Dict, List, Any, Optional
-from enum import Enum
-
-from core import TokenType, Token, Lexer, Function, BreakException, ContinueException, ReturnException
+from .core import TokenType, Token, Lexer, Function, BreakException, ContinueException, ReturnException
 
 class OuroborosInterpreter:
     """拡張されたOuroborosインタープリター"""
@@ -138,11 +136,14 @@ class OuroborosInterpreter:
         
         elif token.type == TokenType.LOGICAL_NOT:
             self.eat(TokenType.LOGICAL_NOT)
-            return not self.factor()
+            result = self.factor()
+            return 1 if not result else 0
         
         # 前置インクリメント・デクリメント
         elif token.type == TokenType.INCREMENT:
             self.eat(TokenType.INCREMENT)
+            if self.current_token.type != TokenType.IDENTIFIER:
+                self.error("Expected identifier after ++")
             var_name = self.current_token.value
             self.eat(TokenType.IDENTIFIER)
             current_value = self.get_variable(var_name)
@@ -152,6 +153,8 @@ class OuroborosInterpreter:
         
         elif token.type == TokenType.DECREMENT:
             self.eat(TokenType.DECREMENT)
+            if self.current_token.type != TokenType.IDENTIFIER:
+                self.error("Expected identifier after --")
             var_name = self.current_token.value
             self.eat(TokenType.IDENTIFIER)
             current_value = self.get_variable(var_name)
@@ -159,8 +162,9 @@ class OuroborosInterpreter:
             self.set_variable(var_name, new_value)
             return new_value
         
-        self.error(f"Unexpected token in expression: {token.type}")
-    
+        else:
+            self.error(f"Unexpected token in expression: {token.type}")
+
     def term(self):
         """項の解析（乗算・除算・剰余）"""
         result = self.factor()
@@ -196,33 +200,33 @@ class OuroborosInterpreter:
                 result = result - self.term()
         
         return result
-    
+
     def comparison_expression(self):
         """比較式の解析"""
         result = self.arithmetic_expression()
         
-        if self.current_token.type in (TokenType.EQUAL, TokenType.NOT_EQUAL, 
-                                     TokenType.LESS, TokenType.LESS_EQUAL,
-                                     TokenType.GREATER, TokenType.GREATER_EQUAL):
+        while self.current_token.type in (TokenType.EQUAL, TokenType.NOT_EQUAL, 
+                                        TokenType.LESS, TokenType.LESS_EQUAL,
+                                        TokenType.GREATER, TokenType.GREATER_EQUAL):
             token = self.current_token
             if token.type == TokenType.EQUAL:
                 self.eat(TokenType.EQUAL)
-                return result == self.arithmetic_expression()
+                result = result == self.arithmetic_expression()
             elif token.type == TokenType.NOT_EQUAL:
                 self.eat(TokenType.NOT_EQUAL)
-                return result != self.arithmetic_expression()
+                result = result != self.arithmetic_expression()
             elif token.type == TokenType.LESS:
                 self.eat(TokenType.LESS)
-                return result < self.arithmetic_expression()
+                result = result < self.arithmetic_expression()
             elif token.type == TokenType.LESS_EQUAL:
                 self.eat(TokenType.LESS_EQUAL)
-                return result <= self.arithmetic_expression()
+                result = result <= self.arithmetic_expression()
             elif token.type == TokenType.GREATER:
                 self.eat(TokenType.GREATER)
-                return result > self.arithmetic_expression()
+                result = result > self.arithmetic_expression()
             elif token.type == TokenType.GREATER_EQUAL:
                 self.eat(TokenType.GREATER_EQUAL)
-                return result >= self.arithmetic_expression()
+                result = result >= self.arithmetic_expression()
         
         return result
     
@@ -399,7 +403,7 @@ class OuroborosInterpreter:
             self.set_variable(var_name, value)
             return value
         
-        # 複合代入演算子（拡張版）
+        # 複合代入演算子
         elif self.current_token.type == TokenType.PLUS_ASSIGN:
             self.eat(TokenType.PLUS_ASSIGN)
             current_value = self.get_variable(var_name)
@@ -438,9 +442,23 @@ class OuroborosInterpreter:
             self.set_variable(var_name, new_value)
             return new_value
         
+        # インクリメント・デクリメント（後置）の場合
+        elif self.current_token.type == TokenType.INCREMENT:
+            self.eat(TokenType.INCREMENT)
+            current_value = self.get_variable(var_name)
+            self.set_variable(var_name, current_value + 1)
+            return current_value
+        
+        elif self.current_token.type == TokenType.DECREMENT:
+            self.eat(TokenType.DECREMENT)
+            current_value = self.get_variable(var_name)
+            self.set_variable(var_name, current_value - 1)
+            return current_value
+        
+        # 単純な変数参照の場合（式文として）
         else:
-            self.error(f"Expected assignment operator after {var_name}")
-            
+            return self.get_variable(var_name)
+    
     def declaration_statement(self):
         """変数宣言文の解析"""
         var_type = self.current_token.value
@@ -468,13 +486,14 @@ class OuroborosInterpreter:
             self.set_variable(var_name, array)
             return array
         
-        # 通常の変数宣言
+        # 初期化付き宣言の場合
         if self.current_token.type == TokenType.ASSIGN:
             self.eat(TokenType.ASSIGN)
             value = self.expression()
             self.set_variable(var_name, value)
+            return value
         else:
-            # デフォルト値
+            # デフォルト値で初期化
             if var_type == 'int':
                 self.set_variable(var_name, 0)
             elif var_type in ['float', 'double']:
@@ -483,7 +502,8 @@ class OuroborosInterpreter:
                 self.set_variable(var_name, '\0')
             else:
                 self.set_variable(var_name, None)
-    
+            return None
+
     def if_statement(self):
         """if文の解析"""
         self.eat(TokenType.IF)
@@ -564,75 +584,158 @@ class OuroborosInterpreter:
         return result
     
     def for_statement(self):
-        """for文の解析"""
+        """for文の解析（修正版）"""
         self.eat(TokenType.FOR)
         self.eat(TokenType.LPAREN)
         
         # 初期化式
         if self.current_token.type != TokenType.SEMICOLON:
-            self.statement()
+            if self.current_token.type in (TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.CHAR_TYPE):
+                # 変数宣言の場合
+                self.declaration_statement()
+            else:
+                # 代入文または式の場合
+                if self.current_token.type == TokenType.IDENTIFIER:
+                    self.assignment_statement()
+                else:
+                    self.expression()
         self.eat(TokenType.SEMICOLON)
         
-        # 条件式の位置を記録
-        condition_start = self.lexer.pos
-        condition_line = self.current_token.line
-        
-        # 条件式
-        condition = True
-        if self.current_token.type != TokenType.SEMICOLON:
-            condition = self.expression()
+        # 条件式を保存
+        condition_tokens = []
+        while self.current_token.type != TokenType.SEMICOLON and self.current_token.type != TokenType.EOF:
+            condition_tokens.append((self.current_token.type, self.current_token.value))
+            self.current_token = self.lexer.get_next_token()
         self.eat(TokenType.SEMICOLON)
         
-        # 更新式の位置を記録
-        update_start = self.lexer.pos
-        update_line = self.current_token.line
-        
-        # 更新式をスキップ（後で実行）
-        if self.current_token.type != TokenType.RPAREN:
-            self.expression()
+        # 更新式を保存
+        update_tokens = []
+        while self.current_token.type != TokenType.RPAREN and self.current_token.type != TokenType.EOF:
+            update_tokens.append((self.current_token.type, self.current_token.value))
+            self.current_token = self.lexer.get_next_token()
         self.eat(TokenType.RPAREN)
         
         self.skip_newlines()
         
+        # ボディの位置を記録
+        body_start_pos = self.lexer.pos
+        body_start_line = self.lexer.line
+        body_start_token = self.current_token
+        
+        # ボディをスキップして終了位置を記録
+        if self.current_token.type == TokenType.LBRACE:
+            self.skip_block()
+        else:
+            self.skip_statement()
+        
+        body_end_pos = self.lexer.pos
+        
         result = None
+        iteration_count = 0
+        max_iterations = 10000  # 無限ループ防止
+        
         try:
-            while condition:
-                # ループボディの実行
-                if self.current_token.type == TokenType.LBRACE:
+            while iteration_count < max_iterations:
+                iteration_count += 1
+                
+                # 条件式の評価
+                condition = True
+                if condition_tokens:
+                    condition = self.evaluate_token_sequence(condition_tokens)
+                
+                if not condition:
+                    break
+                
+                # ボディの実行
+                self.lexer.pos = body_start_pos
+                self.lexer.line = body_start_line
+                self.current_token = body_start_token
+                
+                if body_start_token.type == TokenType.LBRACE:
                     result = self.block_statement()
                 else:
                     result = self.statement()
                 
                 # 更新式の実行
-                saved_pos = self.lexer.pos
-                saved_line = self.lexer.line
-                saved_token = self.current_token
-                
-                self.lexer.pos = update_start
-                self.lexer.line = update_line
-                self.current_token = self.lexer.get_next_token()
-                if self.current_token.type != TokenType.RPAREN:
-                    self.expression()
-                
-                # 条件式の再評価
-                self.lexer.pos = condition_start
-                self.lexer.line = condition_line
-                self.current_token = self.lexer.get_next_token()
-                if self.current_token.type != TokenType.SEMICOLON:
-                    condition = self.expression()
-                
-                # 元の位置に戻る
-                self.lexer.pos = saved_pos
-                self.lexer.line = saved_line
-                self.current_token = saved_token
+                if update_tokens:
+                    self.execute_token_sequence(update_tokens)
         
         except BreakException:
             pass
         except ContinueException:
             pass
         
+        # 元の位置を復元
+        self.lexer.pos = body_end_pos
+        self.current_token = self.lexer.get_next_token()
+        
         return result
-    
+
+    def evaluate_token_sequence(self, tokens):
+        """トークンシーケンスを評価"""
+        if not tokens:
+            return True
+        
+        # トークンシーケンスから文字列を再構築
+        text = ' '.join(token[1] for token in tokens)
+        
+        # 新しいlexerで評価
+        saved_lexer = self.lexer
+        saved_token = self.current_token
+        
+        try:
+            temp_lexer = Lexer(text)
+            self.lexer = temp_lexer
+            self.current_token = self.lexer.get_next_token()
+            
+            result = self.expression()
+            return result
+        except:
+            return False
+        finally:
+            self.lexer = saved_lexer
+            self.current_token = saved_token
+
+    def execute_token_sequence(self, tokens):
+        """トークンシーケンスを実行"""
+        if not tokens:
+            return
+        
+        # トークンシーケンスから文字列を再構築
+        text = ' '.join(token[1] for token in tokens)
+        
+        # 新しいlexerで実行
+        saved_lexer = self.lexer
+        saved_token = self.current_token
+        
+        try:
+            temp_lexer = Lexer(text)
+            self.lexer = temp_lexer
+            self.current_token = self.lexer.get_next_token()
+            
+            if self.current_token.type == TokenType.IDENTIFIER:
+                # 次のトークンをチェックして代入文かどうか判定
+                next_pos = self.lexer.pos
+                next_token = self.lexer.get_next_token()
+                
+                # 位置を戻す
+                self.lexer.pos = 0
+                self.current_token = self.lexer.get_next_token()
+                
+                if next_token.type in (TokenType.ASSIGN, TokenType.PLUS_ASSIGN, 
+                                    TokenType.MINUS_ASSIGN, TokenType.INCREMENT, 
+                                    TokenType.DECREMENT):
+                    self.assignment_statement()
+                else:
+                    self.expression()
+            else:
+                self.expression()
+        except:
+            pass  # 更新式エラーは無視
+        finally:
+            self.lexer = saved_lexer
+            self.current_token = saved_token
+            
     def block_statement(self):
         """ブロック文の解析"""
         self.eat(TokenType.LBRACE)
@@ -643,7 +746,16 @@ class OuroborosInterpreter:
         
         try:
             while self.current_token.type != TokenType.RBRACE and self.current_token.type != TokenType.EOF:
+                if self.current_token.type == TokenType.NEWLINE:
+                    self.eat(TokenType.NEWLINE)
+                    continue
+                
                 result = self.statement()
+                
+                # セミコロンがあれば消費
+                if self.current_token.type == TokenType.SEMICOLON:
+                    self.eat(TokenType.SEMICOLON)
+                
                 self.skip_newlines()
         finally:
             self.pop_scope()
@@ -665,13 +777,30 @@ class OuroborosInterpreter:
     
     def skip_statement(self):
         """文をスキップ"""
-        while (self.current_token.type not in (TokenType.SEMICOLON, TokenType.NEWLINE, 
-                                              TokenType.EOF, TokenType.RBRACE)):
+        paren_depth = 0
+        brace_depth = 0
+        
+        while self.current_token.type != TokenType.EOF:
+            if self.current_token.type == TokenType.LPAREN:
+                paren_depth += 1
+            elif self.current_token.type == TokenType.RPAREN:
+                paren_depth -= 1
+                if paren_depth < 0:
+                    break
+            elif self.current_token.type == TokenType.LBRACE:
+                brace_depth += 1
+            elif self.current_token.type == TokenType.RBRACE:
+                brace_depth -= 1
+                if brace_depth < 0:
+                    break
+            elif (self.current_token.type in (TokenType.SEMICOLON, TokenType.NEWLINE) 
+                and paren_depth == 0 and brace_depth == 0):
+                if self.current_token.type == TokenType.SEMICOLON:
+                    self.eat(TokenType.SEMICOLON)
+                break
+            
             self.current_token = self.lexer.get_next_token()
-        if self.current_token.type == TokenType.SEMICOLON:
-            self.eat(TokenType.SEMICOLON)
     
-    # 1. function_definition()メソッドの修正
     def function_definition(self):
         """関数定義の解析"""
         return_type = self.current_token.value
@@ -788,6 +917,7 @@ class OuroborosInterpreter:
             
             self.eat(self.current_token.type)  # type
             if self.current_token.type == TokenType.IDENTIFIER:
+                identifier = self.current_token.value
                 self.eat(TokenType.IDENTIFIER)
                 if self.current_token.type == TokenType.LPAREN:
                     # 関数定義
@@ -837,11 +967,21 @@ class OuroborosInterpreter:
         elif self.current_token.type == TokenType.IDENTIFIER:
             return self.assignment_statement()
         
+        # 前置インクリメント・デクリメント
+        elif self.current_token.type in (TokenType.INCREMENT, TokenType.DECREMENT):
+            return self.expression()
+
+        # EOF、NEWLINEではNoneを返す
+        elif self.current_token.type in (TokenType.EOF, TokenType.NEWLINE):
+            return None
+        
         else:
-            # 式文として処理
-            result = self.expression()
-            return result
-    
+            try:
+                result = self.expression()
+                return result
+            except:
+                self.error(f"Unexpected token: {self.current_token.type}")
+
     def program(self):
         """プログラム全体の解析"""
         results = []
