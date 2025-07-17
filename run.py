@@ -1,4 +1,4 @@
-from src.ouroboros import OuroborosInterpreter
+from ouroboros import OuroborosInterpreter
 
 def load_c_file(filename: str) -> str:
     """C言語ファイルを読み込み"""
@@ -19,7 +19,6 @@ def main():
     
     interpreter = OuroborosInterpreter()
     
-    # より本格的なサンプルプログラム
     sample_programs = [
         """// 基本的な計算プログラム
 
