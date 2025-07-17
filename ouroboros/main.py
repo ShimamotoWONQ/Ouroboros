@@ -376,7 +376,7 @@ class OuroborosInterpreter:
         pass
     
     def assignment_statement(self):
-        """代入文の解析"""
+        """代入文の解析（修正版）"""
         var_name = self.current_token.value
         self.eat(TokenType.IDENTIFIER)
         
@@ -395,9 +395,16 @@ class OuroborosInterpreter:
                 else:
                     self.error(f"Cannot index non-array variable: {var_name}")
                 return value
+            else:
+                # 配列要素の参照として処理
+                array = self.get_variable(var_name)
+                if isinstance(array, list):
+                    return array[int(index)]
+                else:
+                    self.error(f"Cannot index non-array variable: {var_name}")
         
         # 通常の代入
-        if self.current_token.type == TokenType.ASSIGN:
+        elif self.current_token.type == TokenType.ASSIGN:
             self.eat(TokenType.ASSIGN)
             value = self.expression()
             self.set_variable(var_name, value)
@@ -406,24 +413,33 @@ class OuroborosInterpreter:
         # 複合代入演算子
         elif self.current_token.type == TokenType.PLUS_ASSIGN:
             self.eat(TokenType.PLUS_ASSIGN)
-            current_value = self.get_variable(var_name)
-            new_value = current_value + self.expression()
-            self.set_variable(var_name, new_value)
-            return new_value
+            try:
+                current_value = self.get_variable(var_name)
+                add_value = self.expression()
+                new_value = current_value + add_value
+                self.set_variable(var_name, new_value)
+                return new_value
+            except Exception as e:
+                raise
         
         elif self.current_token.type == TokenType.MINUS_ASSIGN:
             self.eat(TokenType.MINUS_ASSIGN)
             current_value = self.get_variable(var_name)
-            new_value = current_value - self.expression()
+            subtract_value = self.expression()
+            new_value = current_value - subtract_value
             self.set_variable(var_name, new_value)
             return new_value
         
         elif self.current_token.type == TokenType.MULTIPLY_ASSIGN:
             self.eat(TokenType.MULTIPLY_ASSIGN)
-            current_value = self.get_variable(var_name)
-            new_value = current_value * self.expression()
-            self.set_variable(var_name, new_value)
-            return new_value
+            try:
+                current_value = self.get_variable(var_name)
+                multiply_value = self.expression()
+                new_value = current_value * multiply_value
+                self.set_variable(var_name, new_value)
+                return new_value
+            except Exception as e:
+                raise
         
         elif self.current_token.type == TokenType.DIVIDE_ASSIGN:
             self.eat(TokenType.DIVIDE_ASSIGN)
@@ -438,11 +454,12 @@ class OuroborosInterpreter:
         elif self.current_token.type == TokenType.MODULO_ASSIGN:
             self.eat(TokenType.MODULO_ASSIGN)
             current_value = self.get_variable(var_name)
-            new_value = current_value % self.expression()
+            mod_value = self.expression()
+            new_value = current_value % mod_value
             self.set_variable(var_name, new_value)
             return new_value
         
-        # インクリメント・デクリメント（後置）の場合
+        # インクリメント・デクリメント（後置）
         elif self.current_token.type == TokenType.INCREMENT:
             self.eat(TokenType.INCREMENT)
             current_value = self.get_variable(var_name)
@@ -458,7 +475,6 @@ class OuroborosInterpreter:
         # 単純な変数参照の場合（式文として）
         else:
             return self.get_variable(var_name)
-    
     def declaration_statement(self):
         """変数宣言文の解析"""
         var_type = self.current_token.value
@@ -582,7 +598,7 @@ class OuroborosInterpreter:
             pass
         
         return result
-    
+
     def for_statement(self):
         """for文の解析（修正版）"""
         self.eat(TokenType.FOR)
@@ -617,10 +633,11 @@ class OuroborosInterpreter:
         
         self.skip_newlines()
         
-        # ボディの位置を記録
-        body_start_pos = self.lexer.pos
+        # ボディの開始トークンをデバッグ
+        
+        # ボディの位置を記録（LBRACE直前）
+        body_start_pos = self.lexer.pos - 1  # LBRACE自体の位置
         body_start_line = self.lexer.line
-        body_start_token = self.current_token
         
         # ボディをスキップして終了位置を記録
         if self.current_token.type == TokenType.LBRACE:
@@ -646,12 +663,13 @@ class OuroborosInterpreter:
                 if not condition:
                     break
                 
-                # ボディの実行
+                # ボディの開始位置に戻る（LBRACE位置）
                 self.lexer.pos = body_start_pos
                 self.lexer.line = body_start_line
-                self.current_token = body_start_token
+                self.current_token = self.lexer.get_next_token()  # これで LBRACE を取得
                 
-                if body_start_token.type == TokenType.LBRACE:
+                # ボディの実行
+                if self.current_token.type == TokenType.LBRACE:
                     result = self.block_statement()
                 else:
                     result = self.statement()
@@ -704,7 +722,7 @@ class OuroborosInterpreter:
         # トークンシーケンスから文字列を再構築
         text = ' '.join(token[1] for token in tokens)
         
-        # 新しいlexerで実行
+        # 新しいlexerで実行（変数スコープは共有）
         saved_lexer = self.lexer
         saved_token = self.current_token
         
@@ -713,42 +731,38 @@ class OuroborosInterpreter:
             self.lexer = temp_lexer
             self.current_token = self.lexer.get_next_token()
             
+            # 直接assignment_statementを呼び出す
             if self.current_token.type == TokenType.IDENTIFIER:
-                # 次のトークンをチェックして代入文かどうか判定
-                next_pos = self.lexer.pos
-                next_token = self.lexer.get_next_token()
-                
-                # 位置を戻す
-                self.lexer.pos = 0
-                self.current_token = self.lexer.get_next_token()
-                
-                if next_token.type in (TokenType.ASSIGN, TokenType.PLUS_ASSIGN, 
-                                    TokenType.MINUS_ASSIGN, TokenType.INCREMENT, 
-                                    TokenType.DECREMENT):
-                    self.assignment_statement()
-                else:
-                    self.expression()
+                result = self.assignment_statement()
+                return result
             else:
-                self.expression()
-        except:
+                result = self.expression()
+                return result
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             pass  # 更新式エラーは無視
         finally:
             self.lexer = saved_lexer
             self.current_token = saved_token
-            
+
     def block_statement(self):
-        """ブロック文の解析"""
+        """ブロック文の解析（デバッグ版）"""
         self.eat(TokenType.LBRACE)
         self.skip_newlines()
         
-        self.push_scope()
+        # self.push_scope()
         result = None
+        statement_count = 0
         
         try:
             while self.current_token.type != TokenType.RBRACE and self.current_token.type != TokenType.EOF:
                 if self.current_token.type == TokenType.NEWLINE:
                     self.eat(TokenType.NEWLINE)
                     continue
+                
+                statement_count += 1
                 
                 result = self.statement()
                 
@@ -758,11 +772,12 @@ class OuroborosInterpreter:
                 
                 self.skip_newlines()
         finally:
-            self.pop_scope()
+            pass
+            # self.pop_scope()
         
         self.eat(TokenType.RBRACE)
         return result
-    
+
     def skip_block(self):
         """ブロックをスキップ"""
         self.eat(TokenType.LBRACE)
