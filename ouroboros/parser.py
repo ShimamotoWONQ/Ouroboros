@@ -218,7 +218,9 @@ class Parser:
     def if_statement(self) -> IfStatement:
         self.eat(TokenType.IF)
         self.eat(TokenType.LPAREN)
+        self.skip_newlines()
         condition = self.expression()
+        self.skip_newlines()
         self.eat(TokenType.RPAREN)
         
         self.skip_newlines()
@@ -318,6 +320,7 @@ class Parser:
                                      TokenType.DIVIDE_ASSIGN, TokenType.MODULO_ASSIGN):
             token = self.current_token
             self.eat(self.current_token.type)
+            self.skip_newlines()
             value = self.assignment_expression()
             return Assignment(node, value, token.type)
         
@@ -329,6 +332,7 @@ class Parser:
         while self.current_token.type == TokenType.LOGICAL_OR:
             token = self.current_token
             self.eat(TokenType.LOGICAL_OR)
+            self.skip_newlines()
             right = self.logical_and()
             node = BinaryOp(node, token.type, right)
         
@@ -340,6 +344,7 @@ class Parser:
         while self.current_token.type == TokenType.LOGICAL_AND:
             token = self.current_token
             self.eat(TokenType.LOGICAL_AND)
+            self.skip_newlines()
             right = self.equality()
             node = BinaryOp(node, token.type, right)
         
@@ -351,6 +356,7 @@ class Parser:
         while self.current_token.type in (TokenType.EQUAL, TokenType.NOT_EQUAL):
             token = self.current_token
             self.eat(self.current_token.type)
+            self.skip_newlines()
             right = self.relational()
             node = BinaryOp(node, token.type, right)
         
@@ -363,6 +369,7 @@ class Parser:
                                          TokenType.GREATER, TokenType.GREATER_EQUAL):
             token = self.current_token
             self.eat(self.current_token.type)
+            self.skip_newlines()
             right = self.additive()
             node = BinaryOp(node, token.type, right)
         
@@ -374,6 +381,7 @@ class Parser:
         while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
             token = self.current_token
             self.eat(self.current_token.type)
+            self.skip_newlines()
             right = self.multiplicative()
             node = BinaryOp(node, token.type, right)
         
@@ -385,6 +393,7 @@ class Parser:
         while self.current_token.type in (TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.MODULO):
             token = self.current_token
             self.eat(self.current_token.type)
+            self.skip_newlines()
             right = self.unary()
             node = BinaryOp(node, token.type, right)
         
@@ -411,19 +420,24 @@ class Parser:
                 # Handle multi-dimensional array access
                 while self.current_token.type == TokenType.LBRACKET:
                     self.eat(TokenType.LBRACKET)
+                    self.skip_newlines()
                     index = self.expression()
+                    self.skip_newlines()
                     self.eat(TokenType.RBRACKET)
                     node = ArrayAccess(node, index)
             
             elif self.current_token.type == TokenType.LPAREN:
                 if isinstance(node, Identifier):
                     self.eat(TokenType.LPAREN)
+                    self.skip_newlines()
                     args = []
                     if self.current_token.type != TokenType.RPAREN:
                         args.append(self.expression())
                         while self.current_token.type == TokenType.COMMA:
                             self.eat(TokenType.COMMA)
+                            self.skip_newlines()
                             args.append(self.expression())
+                    self.skip_newlines()
                     self.eat(TokenType.RPAREN)
                     node = FunctionCall(node.name, args)
                 else:
@@ -440,6 +454,9 @@ class Parser:
         return node
     
     def primary(self) -> Expression:
+        # Skip newlines in expressions
+        self.skip_newlines()
+        
         token = self.current_token
         
         if token.type == TokenType.NUMBER:
@@ -467,7 +484,9 @@ class Parser:
         
         elif token.type == TokenType.LPAREN:
             self.eat(TokenType.LPAREN)
+            self.skip_newlines()
             node = self.expression()
+            self.skip_newlines()
             self.eat(TokenType.RPAREN)
             return node
         
