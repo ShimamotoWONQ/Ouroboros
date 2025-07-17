@@ -42,13 +42,27 @@ class StandardLibrary:
                         result += '0.0'
                 elif spec == 'c':
                     if arg_index < len(args):
-                        result += chr(int(args[arg_index]))
+                        val = args[arg_index]
+                        if isinstance(val, int):
+                            result += chr(val)
+                        else:
+                            result += str(val)
                         arg_index += 1
                     else:
                         result += '\0'
                 elif spec == 's':
                     if arg_index < len(args):
-                        result += str(args[arg_index])
+                        val = args[arg_index]
+                        if isinstance(val, list):
+                            # char array to string
+                            char_str = ""
+                            for char in val:
+                                if char == 0:
+                                    break
+                                char_str += chr(char) if isinstance(char, int) else str(char)
+                            result += char_str
+                        else:
+                            result += str(val)
                         arg_index += 1
                     else:
                         result += ''
@@ -92,7 +106,15 @@ class StandardLibrary:
     
     def strlen(self, args: List[Any]) -> int:
         if args:
-            return len(str(args[0]))
+            arg = args[0]
+            if isinstance(arg, str):
+                return len(arg)
+            elif isinstance(arg, list):
+                # null-terminated char array
+                for i, char in enumerate(arg):
+                    if char == 0:
+                        return i
+                return len(arg)
         return 0
     
     def strcpy(self, args: List[Any]) -> str:

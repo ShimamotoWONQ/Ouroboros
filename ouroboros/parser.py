@@ -121,17 +121,37 @@ class Parser:
     def variable_declaration(self, var_type: str, name: str) -> Declaration:
         size = None
         value = None
+        initializer = None
         
         if self.current_token.type == TokenType.LBRACKET:
             self.eat(TokenType.LBRACKET)
-            size = self.expression()
+            if self.current_token.type != TokenType.RBRACKET:
+                size = self.expression()
             self.eat(TokenType.RBRACKET)
         
         if self.current_token.type == TokenType.ASSIGN:
             self.eat(TokenType.ASSIGN)
-            value = self.expression()
+            if self.current_token.type == TokenType.LBRACE:
+                initializer = self.array_initializer()
+            else:
+                value = self.expression()
         
-        return Declaration(var_type, name, value, size)
+        return Declaration(var_type, name, value, size, initializer)
+    
+    def array_initializer(self) -> ArrayInitializer:
+        self.eat(TokenType.LBRACE)
+        elements = []
+        
+        if self.current_token.type != TokenType.RBRACE:
+            elements.append(self.expression())
+            while self.current_token.type == TokenType.COMMA:
+                self.eat(TokenType.COMMA)
+                if self.current_token.type == TokenType.RBRACE:
+                    break
+                elements.append(self.expression())
+        
+        self.eat(TokenType.RBRACE)
+        return ArrayInitializer(elements)
     
     def function_definition(self, return_type: str, name: str) -> FunctionDef:
         self.eat(TokenType.LPAREN)
@@ -251,7 +271,20 @@ class Parser:
         return ExpressionStatement(expr)
     
     def expression(self) -> Expression:
-        return self.logical_or()
+        return self.assignment_expression()
+    
+    def assignment_expression(self) -> Expression:
+        node = self.logical_or()
+        
+        if self.current_token.type in (TokenType.ASSIGN, TokenType.PLUS_ASSIGN,
+                                     TokenType.MINUS_ASSIGN, TokenType.MULTIPLY_ASSIGN,
+                                     TokenType.DIVIDE_ASSIGN, TokenType.MODULO_ASSIGN):
+            token = self.current_token
+            self.eat(self.current_token.type)
+            value = self.assignment_expression()
+            return Assignment(node, value, token.type)
+        
+        return node
     
     def logical_or(self) -> Expression:
         node = self.logical_and()
@@ -259,7 +292,8 @@ class Parser:
         while self.current_token.type == TokenType.LOGICAL_OR:
             token = self.current_token
             self.eat(TokenType.LOGICAL_OR)
-            node = BinaryOp(node, token.type, self.logical_and())
+            right = self.logical_and()
+            node = BinaryOp(node, token.type, right)
         
         return node
     
@@ -269,7 +303,8 @@ class Parser:
         while self.current_token.type == TokenType.LOGICAL_AND:
             token = self.current_token
             self.eat(TokenType.LOGICAL_AND)
-            node = BinaryOp(node, token.type, self.equality())
+            right = self.equality()
+            node = BinaryOp(node, token.type, right)
         
         return node
     
@@ -279,7 +314,8 @@ class Parser:
         while self.current_token.type in (TokenType.EQUAL, TokenType.NOT_EQUAL):
             token = self.current_token
             self.eat(self.current_token.type)
-            node = BinaryOp(node, token.type, self.relational())
+            right = self.relational()
+            node = BinaryOp(node, token.type, right)
         
         return node
     
@@ -290,7 +326,8 @@ class Parser:
                                          TokenType.GREATER, TokenType.GREATER_EQUAL):
             token = self.current_token
             self.eat(self.current_token.type)
-            node = BinaryOp(node, token.type, self.additive())
+            right = self.additive()
+            node = BinaryOp(node, token.type, right)
         
         return node
     
@@ -300,7 +337,8 @@ class Parser:
         while self.current_token.type in (TokenType.PLUS, TokenType.MINUS):
             token = self.current_token
             self.eat(self.current_token.type)
-            node = BinaryOp(node, token.type, self.multiplicative())
+            right = self.multiplicative()
+            node = BinaryOp(node, token.type, right)
         
         return node
     
@@ -310,7 +348,8 @@ class Parser:
         while self.current_token.type in (TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.MODULO):
             token = self.current_token
             self.eat(self.current_token.type)
-            node = BinaryOp(node, token.type, self.unary())
+            right = self.unary()
+            node = BinaryOp(node, token.type, right)
         
         return node
     
@@ -355,14 +394,6 @@ class Parser:
                 token = self.current_token
                 self.eat(self.current_token.type)
                 node = PostfixOp(node, token.type)
-            
-            elif self.current_token.type in (TokenType.ASSIGN, TokenType.PLUS_ASSIGN,
-                                           TokenType.MINUS_ASSIGN, TokenType.MULTIPLY_ASSIGN,
-                                           TokenType.DIVIDE_ASSIGN, TokenType.MODULO_ASSIGN):
-                token = self.current_token
-                self.eat(self.current_token.type)
-                value = self.expression()
-                return Assignment(node, value, token.type)
             
             else:
                 break

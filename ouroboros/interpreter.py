@@ -113,7 +113,14 @@ class OuroborosInterpreter:
         return result
     
     def execute_declaration(self, node: Declaration) -> Any:
-        if node.size:
+        if node.initializer:
+            # Array initialization with initializer list
+            elements = self.evaluator.evaluate(node.initializer)
+            self.set_variable(node.name, elements)
+            return elements
+        
+        elif node.size:
+            # Array declaration with size
             size = self.evaluator.evaluate(node.size)
             if node.var_type == 'int':
                 array = [0] * int(size)
@@ -126,11 +133,21 @@ class OuroborosInterpreter:
             self.set_variable(node.name, array)
             return array
         
-        if node.value:
+        elif node.value:
+            # Variable declaration with value
             value = self.evaluator.evaluate(node.value)
-            self.set_variable(node.name, value)
-            return value
+            
+            # Handle string to char array conversion
+            if node.var_type == 'char' and isinstance(value, str):
+                char_array = [ord(c) for c in value] + [0]  # null-terminated
+                self.set_variable(node.name, char_array)
+                return char_array
+            else:
+                self.set_variable(node.name, value)
+                return value
+        
         else:
+            # Default initialization
             if node.var_type == 'int':
                 self.set_variable(node.name, 0)
             elif node.var_type in ['float', 'double']:

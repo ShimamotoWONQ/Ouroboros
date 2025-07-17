@@ -42,6 +42,12 @@ class Evaluator:
             else:
                 raise RuntimeError(f"Cannot index non-array value")
         
+        elif isinstance(node, Assignment):
+            return self.interpreter.execute_assignment(node)
+        
+        elif isinstance(node, ArrayInitializer):
+            return [self.evaluate(element) for element in node.elements]
+        
         elif isinstance(node, PostfixOp):
             return self.evaluate_postfix_op(node)
         
@@ -50,6 +56,19 @@ class Evaluator:
     
     def evaluate_binary_op(self, node: BinaryOp) -> Any:
         left = self.evaluate(node.left)
+        
+        # Short-circuit evaluation for logical operators
+        if node.op == TokenType.LOGICAL_AND:
+            if not left:
+                return 0
+            right = self.evaluate(node.right)
+            return 1 if left and right else 0
+        elif node.op == TokenType.LOGICAL_OR:
+            if left:
+                return 1
+            right = self.evaluate(node.right)
+            return 1 if left or right else 0
+        
         right = self.evaluate(node.right)
         
         if node.op == TokenType.PLUS:
@@ -76,10 +95,6 @@ class Evaluator:
             return 1 if left > right else 0
         elif node.op == TokenType.GREATER_EQUAL:
             return 1 if left >= right else 0
-        elif node.op == TokenType.LOGICAL_AND:
-            return 1 if left and right else 0
-        elif node.op == TokenType.LOGICAL_OR:
-            return 1 if left or right else 0
         elif node.op == TokenType.BITWISE_AND:
             return int(left) & int(right)
         elif node.op == TokenType.BITWISE_OR:

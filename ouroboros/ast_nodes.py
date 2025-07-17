@@ -52,12 +52,18 @@ class Assignment(Statement):
         self.value = value
         self.op = op
 
+class ArrayInitializer(Expression):
+    def __init__(self, elements: List[Expression]):
+        self.elements = elements
+
 class Declaration(Statement):
-    def __init__(self, var_type: str, name: str, value: Optional[Expression] = None, size: Optional[Expression] = None):
+    def __init__(self, var_type: str, name: str, value: Optional[Expression] = None, 
+                 size: Optional[Expression] = None, initializer: Optional[ArrayInitializer] = None):
         self.var_type = var_type
         self.name = name
         self.value = value
         self.size = size
+        self.initializer = initializer
 
 class IfStatement(Statement):
     def __init__(self, condition: Expression, then_stmt: Statement, else_stmt: Optional[Statement] = None):
