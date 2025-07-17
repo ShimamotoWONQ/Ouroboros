@@ -6,6 +6,7 @@ from .parser import Parser
 from .ast_nodes import *
 from .evaluator import Evaluator
 from .stdlib import StandardLibrary
+from .matrix import Matrix
 from .errors import RuntimeError, BreakException, ContinueException, ReturnException
 
 class Function:
@@ -114,32 +115,38 @@ class OuroborosInterpreter:
     
     def execute_declaration(self, node: Declaration) -> Any:
         if node.initializer:
-            # Array initialization with initializer list
             elements = self.evaluator.evaluate(node.initializer)
-            self.set_variable(node.name, elements)
-            return elements
+            
+            if len(node.dimensions) > 1:
+                array = self.create_multidim_array(node.dimensions, elements)
+                self.set_variable(node.name, array)
+                return array
+            else:
+                self.set_variable(node.name, elements)
+                return elements
+        
+        elif node.dimensions:
+            if len(node.dimensions) == 1:
+                size = self.evaluator.evaluate(node.dimensions[0]) if node.dimensions[0] else 0
+                array = self.create_default_array(node.var_type, int(size))
+                self.set_variable(node.name, array)
+                return array
+            else:
+                array = self.create_multidim_array(node.dimensions)
+                self.set_variable(node.name, array)
+                return array
         
         elif node.size:
-            # Array declaration with size
             size = self.evaluator.evaluate(node.size)
-            if node.var_type == 'int':
-                array = [0] * int(size)
-            elif node.var_type == 'float':
-                array = [0.0] * int(size)
-            elif node.var_type == 'char':
-                array = ['\0'] * int(size)
-            else:
-                array = [None] * int(size)
+            array = self.create_default_array(node.var_type, int(size))
             self.set_variable(node.name, array)
             return array
         
         elif node.value:
-            # Variable declaration with value
             value = self.evaluator.evaluate(node.value)
             
-            # Handle string to char array conversion
             if node.var_type == 'char' and isinstance(value, str):
-                char_array = [ord(c) for c in value] + [0]  # null-terminated
+                char_array = [ord(c) for c in value] + [0]
                 self.set_variable(node.name, char_array)
                 return char_array
             else:
@@ -147,7 +154,6 @@ class OuroborosInterpreter:
                 return value
         
         else:
-            # Default initialization
             if node.var_type == 'int':
                 self.set_variable(node.name, 0)
             elif node.var_type in ['float', 'double']:
@@ -157,6 +163,29 @@ class OuroborosInterpreter:
             else:
                 self.set_variable(node.name, None)
             return None
+    
+    def create_default_array(self, var_type: str, size: int):
+        if var_type == 'int':
+            return [0] * size
+        elif var_type == 'float':
+            return [0.0] * size
+        elif var_type == 'char':
+            return ['\0'] * size
+        else:
+            return [None] * size
+    
+    def create_multidim_array(self, dimensions, elements=None):
+        if not dimensions:
+            return []
+        
+        if len(dimensions) == 2:
+            dim1 = self.evaluator.evaluate(dimensions[0]) if dimensions[0] else 3
+            dim2 = self.evaluator.evaluate(dimensions[1]) if dimensions[1] else 3
+            
+            return Matrix(int(dim1), int(dim2), elements)
+        else:
+            size = self.evaluator.evaluate(dimensions[0]) if dimensions[0] else 0
+            return self.create_default_array('int', int(size))
     
     def execute_assignment(self, node: Assignment) -> Any:
         value = self.evaluator.evaluate(node.value)
@@ -187,7 +216,11 @@ class OuroborosInterpreter:
         elif isinstance(node.target, ArrayAccess):
             array = self.evaluator.evaluate(node.target.array)
             index = self.evaluator.evaluate(node.target.index)
+            
             if isinstance(array, list):
+                array[int(index)] = value
+                return value
+            elif hasattr(array, '__setitem__'):
                 array[int(index)] = value
                 return value
             else:

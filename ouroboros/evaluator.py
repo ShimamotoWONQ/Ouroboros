@@ -37,7 +37,11 @@ class Evaluator:
         elif isinstance(node, ArrayAccess):
             array = self.evaluate(node.array)
             index = self.evaluate(node.index)
+            
             if isinstance(array, list):
+                return array[int(index)]
+            elif hasattr(array, '__getitem__'):
+                # Handle Matrix and other custom types
                 return array[int(index)]
             else:
                 raise RuntimeError(f"Cannot index non-array value")

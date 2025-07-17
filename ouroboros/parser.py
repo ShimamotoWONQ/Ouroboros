@@ -119,14 +119,17 @@ class Parser:
             return self.variable_declaration(var_type, name)
     
     def variable_declaration(self, var_type: str, name: str) -> Declaration:
-        size = None
+        dimensions = []
         value = None
         initializer = None
         
-        if self.current_token.type == TokenType.LBRACKET:
+        # Handle multi-dimensional arrays
+        while self.current_token.type == TokenType.LBRACKET:
             self.eat(TokenType.LBRACKET)
             if self.current_token.type != TokenType.RBRACKET:
-                size = self.expression()
+                dimensions.append(self.expression())
+            else:
+                dimensions.append(None)
             self.eat(TokenType.RBRACKET)
         
         if self.current_token.type == TokenType.ASSIGN:
@@ -136,19 +139,33 @@ class Parser:
             else:
                 value = self.expression()
         
-        return Declaration(var_type, name, value, size, initializer)
+        # For backward compatibility
+        size = dimensions[0] if dimensions else None
+        
+        return Declaration(var_type, name, value, size, initializer, dimensions)
     
     def array_initializer(self) -> ArrayInitializer:
         self.eat(TokenType.LBRACE)
         elements = []
         
         if self.current_token.type != TokenType.RBRACE:
-            elements.append(self.expression())
+            if self.current_token.type == TokenType.LBRACE:
+                # Nested array initializer (flatten for now)
+                nested = self.array_initializer()
+                elements.extend(nested.elements)
+            else:
+                elements.append(self.expression())
+            
             while self.current_token.type == TokenType.COMMA:
                 self.eat(TokenType.COMMA)
                 if self.current_token.type == TokenType.RBRACE:
                     break
-                elements.append(self.expression())
+                if self.current_token.type == TokenType.LBRACE:
+                    # Nested array initializer
+                    nested = self.array_initializer()
+                    elements.extend(nested.elements)
+                else:
+                    elements.append(self.expression())
         
         self.eat(TokenType.RBRACE)
         return ArrayInitializer(elements)
@@ -267,8 +284,13 @@ class Parser:
         return Block(statements)
     
     def expression_statement(self) -> ExpressionStatement:
-        expr = self.expression()
-        return ExpressionStatement(expr)
+        try:
+            expr = self.expression()
+            return ExpressionStatement(expr)
+        except Exception as e:
+            # Better error handling for complex expressions
+            self.error(f"Error in expression: {str(e)}")
+
     
     def expression(self) -> Expression:
         return self.assignment_expression()
@@ -371,10 +393,12 @@ class Parser:
         
         while True:
             if self.current_token.type == TokenType.LBRACKET:
-                self.eat(TokenType.LBRACKET)
-                index = self.expression()
-                self.eat(TokenType.RBRACKET)
-                node = ArrayAccess(node, index)
+                # Handle multi-dimensional array access
+                while self.current_token.type == TokenType.LBRACKET:
+                    self.eat(TokenType.LBRACKET)
+                    index = self.expression()
+                    self.eat(TokenType.RBRACKET)
+                    node = ArrayAccess(node, index)
             
             elif self.current_token.type == TokenType.LPAREN:
                 if isinstance(node, Identifier):

@@ -58,12 +58,14 @@ class ArrayInitializer(Expression):
 
 class Declaration(Statement):
     def __init__(self, var_type: str, name: str, value: Optional[Expression] = None, 
-                 size: Optional[Expression] = None, initializer: Optional[ArrayInitializer] = None):
+                 size: Optional[Expression] = None, initializer: Optional[ArrayInitializer] = None,
+                 dimensions: Optional[List[Expression]] = None):
         self.var_type = var_type
         self.name = name
         self.value = value
         self.size = size
         self.initializer = initializer
+        self.dimensions = dimensions or []
 
 class IfStatement(Statement):
     def __init__(self, condition: Expression, then_stmt: Statement, else_stmt: Optional[Statement] = None):

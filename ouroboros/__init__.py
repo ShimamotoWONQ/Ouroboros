@@ -6,6 +6,7 @@ from .parser import Parser
 from .ast_nodes import *
 from .evaluator import Evaluator
 from .stdlib import StandardLibrary
+from .matrix import Matrix
 from .errors import *
 from .main import run_code
 
@@ -21,6 +22,7 @@ __all__ = [
     'Parser',
     'Evaluator',
     'StandardLibrary',
+    'Matrix',
     'run_code',
     'InterpreterError',
     'LexerError',
