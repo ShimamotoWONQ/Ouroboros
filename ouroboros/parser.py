@@ -215,14 +215,14 @@ class Parser:
             param_type, param_pointer_level = self.parse_type_with_pointers()
             param_name = self.current_token.value
             self.eat(TokenType.IDENTIFIER)
-            params.append(Parameter(param_type, param_name, param_pointer_level))
+            params.append(Parameter(param_type, param_name, pointer_level=param_pointer_level))
             
             while self.current_token.type == TokenType.COMMA:
                 self.eat(TokenType.COMMA)
                 param_type, param_pointer_level = self.parse_type_with_pointers()
                 param_name = self.current_token.value
                 self.eat(TokenType.IDENTIFIER)
-                params.append(Parameter(param_type, param_name, param_pointer_level))
+                params.append(Parameter(param_type, param_name, pointer_level=param_pointer_level))
         
         self.eat(TokenType.RPAREN)
         self.skip_newlines()
@@ -534,6 +534,8 @@ class Parser:
         elif token.type == TokenType.LPAREN:
             self.eat(TokenType.LPAREN)
             self.skip_newlines()
+            
+            # 型キャストは無視してそのまま括弧式として処理
             # 通常の括弧式
             node = self.expression()
             self.skip_newlines()

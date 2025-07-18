@@ -106,10 +106,11 @@ class ExpressionStatement(Statement):
         self.expression = expression
 
 class Parameter:
-    def __init__(self, var_type: str, name: str):
+    def __init__(self, var_type: str, name: str, pointer_level: int = 0):
         self.var_type = var_type
         self.name = name
-
+        self.pointer_level = pointer_level
+        
 class FunctionDef(Statement):
     def __init__(self, return_type: str, name: str, params: List[Parameter], body: Block):
         self.return_type = return_type
