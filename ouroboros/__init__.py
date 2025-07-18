@@ -7,6 +7,7 @@ from .ast_nodes import *
 from .evaluator import Evaluator
 from .stdlib import StandardLibrary
 from .matrix import Matrix
+from .memory import MemoryManager, MemoryBlock
 from .errors import *
 from .main import run_code
 
@@ -23,6 +24,8 @@ __all__ = [
     'Evaluator',
     'StandardLibrary',
     'Matrix',
+    'MemoryManager',
+    'MemoryBlock',
     'run_code',
     'InterpreterError',
     'LexerError',

@@ -3,7 +3,8 @@
 from typing import List, Any
 
 class StandardLibrary:
-    def __init__(self):
+    def __init__(self, memory_manager=None):
+        self.memory_manager = memory_manager
         self.functions = {
             'printf': self.printf,
             'scanf': self.scanf,
@@ -14,6 +15,7 @@ class StandardLibrary:
             'strcmp': self.strcmp,
             'malloc': self.malloc,
             'free': self.free,
+            'realloc': self.realloc,
         }
     
     def printf(self, args: List[Any]) -> int:
@@ -66,6 +68,17 @@ class StandardLibrary:
                         arg_index += 1
                     else:
                         result += ''
+                elif spec == 'p':
+                    # ポインタ表示
+                    if arg_index < len(args):
+                        val = args[arg_index]
+                        if isinstance(val, int):
+                            result += f"0x{val:08x}"
+                        else:
+                            result += str(val)
+                        arg_index += 1
+                    else:
+                        result += '0x00000000'
                 elif spec == '%':
                     result += '%'
                 else:
@@ -115,17 +128,46 @@ class StandardLibrary:
                     if char == 0:
                         return i
                 return len(arg)
+            elif isinstance(arg, int) and self.memory_manager:
+                # ポインタの場合、メモリから読み取り
+                try:
+                    length = 0
+                    while True:
+                        char = self.memory_manager.read_memory(arg, length)
+                        if char == 0:
+                            break
+                        length += 1
+                    return length
+                except:
+                    return 0
         return 0
     
-    def strcpy(self, args: List[Any]) -> str:
+    def strcpy(self, args: List[Any]) -> Any:
         if len(args) >= 2:
-            return str(args[1])
+            dest = args[0]
+            src = args[1]
+            
+            if isinstance(dest, int) and self.memory_manager:
+                # ポインタの場合
+                if isinstance(src, str):
+                    for i, char in enumerate(src):
+                        self.memory_manager.write_memory(dest, i, ord(char))
+                    self.memory_manager.write_memory(dest, len(src), 0)  # null terminator
+                elif isinstance(src, list):
+                    for i, char in enumerate(src):
+                        self.memory_manager.write_memory(dest, i, char)
+                        if char == 0:
+                            break
+                return dest
+            else:
+                return str(src) if src else ""
         return ""
     
     def strcmp(self, args: List[Any]) -> int:
         if len(args) >= 2:
-            str1 = str(args[0])
-            str2 = str(args[1])
+            str1 = self._get_string_value(args[0])
+            str2 = self._get_string_value(args[1])
+            
             if str1 < str2:
                 return -1
             elif str1 > str2:
@@ -134,14 +176,76 @@ class StandardLibrary:
                 return 0
         return 0
     
-    def malloc(self, args: List[Any]) -> List[Any]:
-        if args:
+    def malloc(self, args: List[Any]) -> int:
+        """メモリを確保し、アドレスを返す"""
+        if not args or not self.memory_manager:
+            return 0
+        
+        try:
             size = int(args[0])
-            return [0] * size
-        return []
+            address = self.memory_manager.malloc(size)
+            return address
+        except Exception as e:
+            print(f"malloc error: {e}")
+            return 0
     
     def free(self, args: List[Any]) -> int:
-        return 0
+        """メモリを解放"""
+        if not args or not self.memory_manager:
+            return 0
+        
+        try:
+            address = int(args[0])
+            if address == 0:  # NULL pointer
+                return 0
+            self.memory_manager.free(address)
+            return 0
+        except Exception as e:
+            print(f"free error: {e}")
+            return -1
+    
+    def realloc(self, args: List[Any]) -> int:
+        """メモリを再確保"""
+        if len(args) < 2 or not self.memory_manager:
+            return 0
+        
+        try:
+            address = int(args[0])
+            new_size = int(args[1])
+            new_address = self.memory_manager.realloc(address, new_size)
+            return new_address
+        except Exception as e:
+            print(f"realloc error: {e}")
+            return 0
+    
+    def _get_string_value(self, arg: Any) -> str:
+        """引数から文字列値を取得するヘルパー関数"""
+        if isinstance(arg, str):
+            return arg
+        elif isinstance(arg, list):
+            # null-terminated char array
+            result = ""
+            for char in arg:
+                if char == 0:
+                    break
+                result += chr(char) if isinstance(char, int) else str(char)
+            return result
+        elif isinstance(arg, int) and self.memory_manager:
+            # ポインタの場合、メモリから読み取り
+            try:
+                result = ""
+                offset = 0
+                while True:
+                    char = self.memory_manager.read_memory(arg, offset)
+                    if char == 0:
+                        break
+                    result += chr(char) if isinstance(char, int) else str(char)
+                    offset += 1
+                return result
+            except:
+                return ""
+        else:
+            return str(arg)
     
     def call_function(self, name: str, args: List[Any]) -> Any:
         if name in self.functions:

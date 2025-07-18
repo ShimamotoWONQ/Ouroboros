@@ -7,6 +7,7 @@ from .ast_nodes import *
 from .evaluator import Evaluator
 from .stdlib import StandardLibrary
 from .matrix import Matrix
+from .memory import MemoryManager
 from .errors import RuntimeError, BreakException, ContinueException, ReturnException
 
 class Function:
@@ -38,7 +39,8 @@ class OuroborosInterpreter:
         self.global_variables: Dict[str, Any] = {}
         self.local_variables: List[Dict[str, Any]] = []
         self.functions: Dict[str, Function] = {}
-        self.stdlib = StandardLibrary()
+        self.memory_manager = MemoryManager()
+        self.stdlib = StandardLibrary(self.memory_manager)
         self.evaluator = None
     
     def get_variables(self) -> Dict[str, Any]:

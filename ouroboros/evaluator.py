@@ -38,7 +38,13 @@ class Evaluator:
             array = self.evaluate(node.array)
             index = self.evaluate(node.index)
             
-            if isinstance(array, list):
+            if isinstance(array, int) and hasattr(self.interpreter, 'memory_manager'):
+                # ポインタの場合、メモリから読み取り
+                try:
+                    return self.interpreter.memory_manager.read_memory(array, int(index))
+                except Exception as e:
+                    raise RuntimeError(f"Memory access error: {e}")
+            elif isinstance(array, list):
                 return array[int(index)]
             elif hasattr(array, '__getitem__'):
                 # Handle Matrix and other custom types
