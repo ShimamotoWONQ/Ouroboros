@@ -61,9 +61,6 @@ class Evaluator:
         elif isinstance(node, PostfixOp):
             return self.evaluate_postfix_op(node)
         
-        elif isinstance(node, TypeCast):
-            return self.evaluate_type_cast(node)
-        
         else:
             raise RuntimeError(f"Unknown expression type: {type(node)}")
     
@@ -192,19 +189,3 @@ class Evaluator:
             return self.functions[node.name].call(args, self.interpreter)
         else:
             raise RuntimeError(f"Undefined function: {node.name}")
-    
-    def evaluate_type_cast(self, node) -> Any:
-        """型キャストの評価"""
-        value = self.evaluate(node.expression)
-        
-        if node.pointer_level > 0:
-            # ポインタ型へのキャスト
-            return int(value)
-        elif node.target_type == 'int':
-            return int(value)
-        elif node.target_type in ['float', 'double']:
-            return float(value)
-        elif node.target_type == 'char':
-            return int(value) & 0xFF
-        else:
-            return value

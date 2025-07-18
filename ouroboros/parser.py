@@ -534,35 +534,6 @@ class Parser:
         elif token.type == TokenType.LPAREN:
             self.eat(TokenType.LPAREN)
             self.skip_newlines()
-            
-            # 型キャストかどうかチェック
-            if self.current_token.type in (TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, 
-                                         TokenType.CHAR_TYPE, TokenType.VOID):
-                # 型キャストの可能性
-                saved_pos = self.lexer.pos
-                saved_line = self.lexer.line
-                saved_token = self.current_token
-                
-                try:
-                    # 型とポインタレベルを解析
-                    target_type, pointer_level = self.parse_type_with_pointers()
-                    
-                    if self.current_token.type == TokenType.RPAREN:
-                        # 型キャスト確定
-                        self.eat(TokenType.RPAREN)
-                        expr = self.unary()
-                        return TypeCast(target_type, expr, pointer_level)
-                    else:
-                        # 型キャストではない、元に戻す
-                        self.lexer.pos = saved_pos
-                        self.lexer.line = saved_line
-                        self.current_token = saved_token
-                except:
-                    # 型キャストではない、元に戻す
-                    self.lexer.pos = saved_pos
-                    self.lexer.line = saved_line
-                    self.current_token = saved_token
-            
             # 通常の括弧式
             node = self.expression()
             self.skip_newlines()
