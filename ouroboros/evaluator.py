@@ -50,7 +50,7 @@ class Evaluator:
                 # Handle Matrix and other custom types
                 return array[int(index)]
             else:
-                raise RuntimeError(f"Cannot index non-array value")
+                raise RuntimeError(f"Cannot index non-array value: {type(array)}")
         
         elif isinstance(node, Assignment):
             return self.interpreter.execute_assignment(node)
@@ -60,6 +60,9 @@ class Evaluator:
         
         elif isinstance(node, PostfixOp):
             return self.evaluate_postfix_op(node)
+        
+        elif isinstance(node, TypeCast):
+            return self.evaluate_type_cast(node)
         
         else:
             raise RuntimeError(f"Unknown expression type: {type(node)}")
@@ -123,6 +126,24 @@ class Evaluator:
             return self.evaluate(operand)
         elif node.op == TokenType.LOGICAL_NOT:
             return 1 if not self.evaluate(operand) else 0
+        elif node.op == TokenType.DEREFERENCE:
+            # ポインタのデリファレンス *ptr
+            address = self.evaluate(operand)
+            if isinstance(address, int) and hasattr(self.interpreter, 'memory_manager'):
+                try:
+                    return self.interpreter.memory_manager.read_memory(address, 0)
+                except Exception as e:
+                    raise RuntimeError(f"Dereference error: {e}")
+            else:
+                raise RuntimeError("Cannot dereference non-pointer value")
+        elif node.op == TokenType.ADDRESS_OF:
+            # 変数のアドレス取得 &var
+            if isinstance(operand, Identifier):
+                # 簡単な実装：変数名のハッシュをアドレスとして使用
+                # 実際の実装では変数のメモリ位置を返すべき
+                return hash(operand.name) & 0xFFFFFF + 0x1000
+            else:
+                raise RuntimeError("Cannot take address of non-lvalue")
         elif node.op == TokenType.INCREMENT:
             if isinstance(operand, Identifier):
                 current_value = self.get_variable(operand.name)
@@ -171,3 +192,19 @@ class Evaluator:
             return self.functions[node.name].call(args, self.interpreter)
         else:
             raise RuntimeError(f"Undefined function: {node.name}")
+    
+    def evaluate_type_cast(self, node) -> Any:
+        """型キャストの評価"""
+        value = self.evaluate(node.expression)
+        
+        if node.pointer_level > 0:
+            # ポインタ型へのキャスト
+            return int(value)
+        elif node.target_type == 'int':
+            return int(value)
+        elif node.target_type in ['float', 'double']:
+            return float(value)
+        elif node.target_type == 'char':
+            return int(value) & 0xFF
+        else:
+            return value

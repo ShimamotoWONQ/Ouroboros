@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from .lexer import Lexer, Token, TokenType
 from .ast_nodes import *
 from .errors import ParserError
@@ -83,6 +83,18 @@ class Parser:
         
         return self.expression_statement()
     
+    def parse_type_with_pointers(self) -> Tuple[str, int]:
+        """型とポインタレベルを解析"""
+        var_type = self.current_token.value
+        self.eat(self.current_token.type)
+        
+        pointer_level = 0
+        while self.current_token.type == TokenType.MULTIPLY:
+            pointer_level += 1
+            self.eat(TokenType.MULTIPLY)
+        
+        return var_type, pointer_level
+    
     def preprocessor_directive(self) -> PreprocessorDirective:
         self.eat(TokenType.INCLUDE)
         
@@ -107,37 +119,43 @@ class Parser:
         return PreprocessorDirective("include")
     
     def declaration_or_function(self) -> Statement:
-        var_type = self.current_token.value
-        self.eat(self.current_token.type)
+        var_type, pointer_level = self.parse_type_with_pointers()
         
         name = self.current_token.value
         self.eat(TokenType.IDENTIFIER)
         
         if self.current_token.type == TokenType.LPAREN:
-            return self.function_definition(var_type, name)
+            return self.function_definition(var_type, name, pointer_level)
         else:
-            return self.multiple_variable_declaration(var_type, name)
+            return self.multiple_variable_declaration(var_type, name, pointer_level)
     
-    def multiple_variable_declaration(self, var_type: str, first_name: str) -> Block:
+    def multiple_variable_declaration(self, var_type: str, first_name: str, pointer_level: int = 0) -> Block:
         """Handle multiple variable declarations like: int a = 1, b = 2, c;"""
         declarations = []
         
         # First variable
-        declarations.append(self.variable_declaration(var_type, first_name))
+        declarations.append(self.variable_declaration(var_type, first_name, pointer_level))
         
         # Additional variables
         while self.current_token.type == TokenType.COMMA:
             self.eat(TokenType.COMMA)
+            
+            # Parse additional pointer levels for this variable
+            var_pointer_level = pointer_level
+            while self.current_token.type == TokenType.MULTIPLY:
+                var_pointer_level += 1
+                self.eat(TokenType.MULTIPLY)
+            
             var_name = self.current_token.value
             self.eat(TokenType.IDENTIFIER)
-            declarations.append(self.variable_declaration(var_type, var_name))
+            declarations.append(self.variable_declaration(var_type, var_name, var_pointer_level))
         
         if len(declarations) == 1:
             return declarations[0]
         else:
             return Block(declarations)
     
-    def variable_declaration(self, var_type: str, name: str) -> Declaration:
+    def variable_declaration(self, var_type: str, name: str, pointer_level: int = 0) -> Declaration:
         dimensions = []
         value = None
         initializer = None
@@ -161,7 +179,7 @@ class Parser:
         # For backward compatibility
         size = dimensions[0] if dimensions else None
         
-        return Declaration(var_type, name, value, size, initializer, dimensions)
+        return Declaration(var_type, name, value, size, initializer, dimensions, pointer_level)
     
     def array_initializer(self) -> ArrayInitializer:
         self.eat(TokenType.LBRACE)
@@ -189,24 +207,22 @@ class Parser:
         self.eat(TokenType.RBRACE)
         return ArrayInitializer(elements)
     
-    def function_definition(self, return_type: str, name: str) -> FunctionDef:
+    def function_definition(self, return_type: str, name: str, pointer_level: int = 0) -> FunctionDef:
         self.eat(TokenType.LPAREN)
         
         params = []
         if self.current_token.type != TokenType.RPAREN:
-            param_type = self.current_token.value
-            self.eat(self.current_token.type)
+            param_type, param_pointer_level = self.parse_type_with_pointers()
             param_name = self.current_token.value
             self.eat(TokenType.IDENTIFIER)
-            params.append(Parameter(param_type, param_name))
+            params.append(Parameter(param_type, param_name, param_pointer_level))
             
             while self.current_token.type == TokenType.COMMA:
                 self.eat(TokenType.COMMA)
-                param_type = self.current_token.value
-                self.eat(self.current_token.type)
+                param_type, param_pointer_level = self.parse_type_with_pointers()
                 param_name = self.current_token.value
                 self.eat(TokenType.IDENTIFIER)
-                params.append(Parameter(param_type, param_name))
+                params.append(Parameter(param_type, param_name, param_pointer_level))
         
         self.eat(TokenType.RPAREN)
         self.skip_newlines()
@@ -410,6 +426,38 @@ class Parser:
             self.eat(self.current_token.type)
             return UnaryOp(token.type, self.postfix())
         
+        # ポインタ演算子
+        if self.current_token.type == TokenType.MULTIPLY:
+            # デリファレンス演算子 *ptr
+            token = self.current_token
+            self.eat(TokenType.MULTIPLY)
+            return UnaryOp(TokenType.DEREFERENCE, self.unary())
+        
+        if self.current_token.type == TokenType.BITWISE_AND:
+            # アドレス演算子 &var
+            token = self.current_token
+            self.eat(TokenType.BITWISE_AND)
+            return UnaryOp(TokenType.ADDRESS_OF, self.unary())
+        
+        if self.current_token.type == TokenType.SIZEOF:
+            # sizeof演算子
+            self.eat(TokenType.SIZEOF)
+            self.eat(TokenType.LPAREN)
+            if self.current_token.type in (TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.CHAR_TYPE):
+                # sizeof(type)
+                type_name = self.current_token.value
+                self.eat(self.current_token.type)
+                # ポインタレベルをチェック
+                while self.current_token.type == TokenType.MULTIPLY:
+                    self.eat(TokenType.MULTIPLY)
+                self.eat(TokenType.RPAREN)
+                return Literal(4)  # 簡単のため、すべて4バイトとする
+            else:
+                # sizeof(expression)
+                expr = self.expression()
+                self.eat(TokenType.RPAREN)
+                return Literal(4)  # 簡単のため、すべて4バイトとする
+        
         return self.postfix()
     
     def postfix(self) -> Expression:
@@ -477,7 +525,8 @@ class Parser:
             return Identifier(token.value)
         
         elif token.type in (TokenType.PRINTF, TokenType.SCANF, TokenType.PUTS, TokenType.GETS,
-                           TokenType.STRLEN, TokenType.STRCPY, TokenType.STRCMP):
+                           TokenType.STRLEN, TokenType.STRCPY, TokenType.STRCMP, TokenType.MALLOC,
+                           TokenType.FREE, TokenType.REALLOC):
             func_name = token.value
             self.eat(token.type)
             return Identifier(func_name)
@@ -485,6 +534,36 @@ class Parser:
         elif token.type == TokenType.LPAREN:
             self.eat(TokenType.LPAREN)
             self.skip_newlines()
+            
+            # 型キャストかどうかチェック
+            if self.current_token.type in (TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, 
+                                         TokenType.CHAR_TYPE, TokenType.VOID):
+                # 型キャストの可能性
+                saved_pos = self.lexer.pos
+                saved_line = self.lexer.line
+                saved_token = self.current_token
+                
+                try:
+                    # 型とポインタレベルを解析
+                    target_type, pointer_level = self.parse_type_with_pointers()
+                    
+                    if self.current_token.type == TokenType.RPAREN:
+                        # 型キャスト確定
+                        self.eat(TokenType.RPAREN)
+                        expr = self.unary()
+                        return TypeCast(target_type, expr, pointer_level)
+                    else:
+                        # 型キャストではない、元に戻す
+                        self.lexer.pos = saved_pos
+                        self.lexer.line = saved_line
+                        self.current_token = saved_token
+                except:
+                    # 型キャストではない、元に戻す
+                    self.lexer.pos = saved_pos
+                    self.lexer.line = saved_line
+                    self.current_token = saved_token
+            
+            # 通常の括弧式
             node = self.expression()
             self.skip_newlines()
             self.eat(TokenType.RPAREN)

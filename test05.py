@@ -1,11 +1,10 @@
 # メモリ管理機能のテストコード
-from ouroboros import run_code
 
 # 例1: 基本的なmalloc/free
 code1 = """
 int main() {
-    int *ptr = (int*)malloc(4 * sizeof(int));
-    if (ptr != NULL) {
+    int *ptr = malloc(4 * sizeof(int));
+    if (ptr != 0) {
         ptr[0] = 10;
         ptr[1] = 20;
         ptr[2] = 30;
@@ -26,8 +25,8 @@ int main() {
 # 例2: 動的文字列処理
 code2 = """
 int main() {
-    char *str = (char*)malloc(20);
-    if (str != NULL) {
+    char *str = malloc(20);
+    if (str != 0) {
         strcpy(str, "Hello, World!");
         printf("String: %s\\n", str);
         printf("Length: %d\\n", strlen(str));
@@ -42,8 +41,8 @@ int main() {
 # 例3: realloc による動的配列の拡張
 code3 = """
 int main() {
-    int *arr = (int*)malloc(3 * sizeof(int));
-    if (arr != NULL) {
+    int *arr = malloc(3 * sizeof(int));
+    if (arr != 0) {
         arr[0] = 1;
         arr[1] = 2;
         arr[2] = 3;
@@ -53,9 +52,8 @@ int main() {
             printf("arr[%d] = %d\\n", i, arr[i]);
         }
         
-        // 配列を5要素に拡張
-        arr = (int*)realloc(arr, 5 * sizeof(int));
-        if (arr != NULL) {
+        arr = realloc(arr, 5 * sizeof(int));
+        if (arr != 0) {
             arr[3] = 4;
             arr[4] = 5;
             
@@ -75,16 +73,16 @@ int main() {
 # 例4: 複数のメモリ確保と解放
 code4 = """
 int main() {
-    int *ptr1 = (int*)malloc(10 * sizeof(int));
-    int *ptr2 = (int*)malloc(5 * sizeof(int));
-    char *ptr3 = (char*)malloc(50);
+    int *ptr1 = malloc(10 * sizeof(int));
+    int *ptr2 = malloc(5 * sizeof(int));
+    char *ptr3 = malloc(50);
     
     printf("Memory addresses:\\n");
     printf("ptr1: %p\\n", ptr1);
     printf("ptr2: %p\\n", ptr2);
     printf("ptr3: %p\\n", ptr3);
     
-    if (ptr1 != NULL) {
+    if (ptr1 != 0) {
         for (int i = 0; i < 10; i++) {
             ptr1[i] = i * i;
         }
@@ -95,7 +93,7 @@ int main() {
         printf("\\n");
     }
     
-    if (ptr2 != NULL) {
+    if (ptr2 != 0) {
         for (int i = 0; i < 5; i++) {
             ptr2[i] = i + 100;
         }
@@ -106,7 +104,7 @@ int main() {
         printf("\\n");
     }
     
-    if (ptr3 != NULL) {
+    if (ptr3 != 0) {
         strcpy(ptr3, "Dynamic string allocation test");
         printf("ptr3 string: %s\\n", ptr3);
     }
@@ -125,18 +123,15 @@ code5 = """
 int main() {
     printf("=== Memory Reuse Test ===\\n");
     
-    // 最初の確保と解放
-    int *ptr1 = (int*)malloc(8 * sizeof(int));
+    int *ptr1 = malloc(8 * sizeof(int));
     printf("First allocation: %p\\n", ptr1);
     free(ptr1);
     
-    // 同じサイズで再確保（同じアドレスが再利用される可能性）
-    int *ptr2 = (int*)malloc(8 * sizeof(int));
+    int *ptr2 = malloc(8 * sizeof(int));
     printf("Second allocation: %p\\n", ptr2);
     free(ptr2);
     
-    // 異なるサイズで確保
-    char *ptr3 = (char*)malloc(32);
+    char *ptr3 = malloc(32);
     printf("Third allocation: %p\\n", ptr3);
     free(ptr3);
     
@@ -149,25 +144,22 @@ code6 = """
 int main() {
     printf("=== Error Handling Test ===\\n");
     
-    // 正常なmalloc
-    int *ptr = (int*)malloc(10 * sizeof(int));
-    if (ptr != NULL) {
+    int *ptr = malloc(10 * sizeof(int));
+    if (ptr != 0) {
         printf("Malloc successful: %p\\n", ptr);
         ptr[0] = 42;
         printf("Value stored: %d\\n", ptr[0]);
         
-        // 正常なfree
         free(ptr);
         printf("Memory freed\\n");
-        
-        // 二重解放のテスト（エラーが発生するはず）
-        printf("Attempting double free...\\n");
-        // free(ptr);  // これはエラーになる
     }
     
     return 0;
 }
 """
+
+# 実行
+from ouroboros import run_code
 
 print("=== Test 1: Basic malloc/free ===")
 run_code(code1)

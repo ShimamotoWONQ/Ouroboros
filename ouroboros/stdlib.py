@@ -63,6 +63,20 @@ class StandardLibrary:
                                     break
                                 char_str += chr(char) if isinstance(char, int) else str(char)
                             result += char_str
+                        elif isinstance(val, int) and self.memory_manager:
+                            # ポインタの場合、メモリから文字列を読み取り
+                            try:
+                                char_str = ""
+                                offset = 0
+                                while True:
+                                    char = self.memory_manager.read_memory(val, offset)
+                                    if char == 0:
+                                        break
+                                    char_str += chr(char) if isinstance(char, int) else str(char)
+                                    offset += 1
+                                result += char_str
+                            except:
+                                result += f"0x{val:08x}"  # アドレス表示
                         else:
                             result += str(val)
                         arg_index += 1
@@ -158,6 +172,15 @@ class StandardLibrary:
                         self.memory_manager.write_memory(dest, i, char)
                         if char == 0:
                             break
+                elif isinstance(src, int) and self.memory_manager:
+                    # src もポインタの場合
+                    offset = 0
+                    while True:
+                        char = self.memory_manager.read_memory(src, offset)
+                        self.memory_manager.write_memory(dest, offset, char)
+                        if char == 0:
+                            break
+                        offset += 1
                 return dest
             else:
                 return str(src) if src else ""

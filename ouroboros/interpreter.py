@@ -118,6 +118,17 @@ class OuroborosInterpreter:
         return result
     
     def execute_declaration(self, node: Declaration) -> Any:
+        # ポインタ変数の場合、初期値を0（NULL）に設定
+        if node.pointer_level > 0:
+            if node.value:
+                value = self.evaluator.evaluate(node.value)
+                self.set_variable(node.name, value)
+                return value
+            else:
+                self.set_variable(node.name, 0)  # NULL pointer
+                return 0
+        
+        # 既存の配列・通常変数処理
         if node.initializer:
             elements = self.evaluator.evaluate(node.initializer)
             
@@ -221,14 +232,21 @@ class OuroborosInterpreter:
             array = self.evaluator.evaluate(node.target.array)
             index = self.evaluator.evaluate(node.target.index)
             
-            if isinstance(array, list):
+            if isinstance(array, int) and hasattr(self, 'memory_manager'):
+                # ポインタの場合、メモリに書き込み
+                try:
+                    self.memory_manager.write_memory(array, int(index), value)
+                    return value
+                except Exception as e:
+                    raise RuntimeError(f"Memory write error: {e}")
+            elif isinstance(array, list):
                 array[int(index)] = value
                 return value
             elif hasattr(array, '__setitem__'):
                 array[int(index)] = value
                 return value
             else:
-                raise RuntimeError("Cannot index non-array value")
+                raise RuntimeError(f"Cannot index non-array value: {type(array)}")
         
         else:
             raise RuntimeError(f"Invalid assignment target: {type(node.target)}")

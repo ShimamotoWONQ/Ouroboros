@@ -47,6 +47,10 @@ class TokenType(Enum):
     BITWISE_OR = "BITWISE_OR"
     BITWISE_XOR = "BITWISE_XOR"
     
+    # Pointer operators
+    DEREFERENCE = "DEREFERENCE"  # * (単項演算子として)
+    ADDRESS_OF = "ADDRESS_OF"    # & (単項演算子として)
+    
     # Delimiters
     SEMICOLON = "SEMICOLON"
     COMMA = "COMMA"
@@ -74,6 +78,7 @@ class TokenType(Enum):
     SWITCH = "SWITCH"
     CASE = "CASE"
     DEFAULT = "DEFAULT"
+    SIZEOF = "SIZEOF"
     
     # Standard library functions
     PRINTF = "PRINTF"
@@ -85,6 +90,7 @@ class TokenType(Enum):
     STRCMP = "STRCMP"
     MALLOC = "MALLOC"
     FREE = "FREE"
+    REALLOC = "REALLOC"
     
     # Preprocessor
     INCLUDE = "INCLUDE"
@@ -125,6 +131,7 @@ class Lexer:
             'switch': TokenType.SWITCH,
             'case': TokenType.CASE,
             'default': TokenType.DEFAULT,
+            'sizeof': TokenType.SIZEOF,
             'printf': TokenType.PRINTF,
             'scanf': TokenType.SCANF,
             'gets': TokenType.GETS,
@@ -134,6 +141,7 @@ class Lexer:
             'strcmp': TokenType.STRCMP,
             'malloc': TokenType.MALLOC,
             'free': TokenType.FREE,
+            'realloc': TokenType.REALLOC,
             'include': TokenType.INCLUDE,
             'define': TokenType.DEFINE,
         }
