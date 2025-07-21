@@ -3,10 +3,11 @@
 import sys
 from .interpreter import OuroborosInterpreter
 from .errors import InterpreterError
+from .logger import Logger
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python -m ouroboros <file.c>")
+        Logger.info("Usage: python -m ouroboros <file.c>")
         sys.exit(1)
     
     filename = sys.argv[1]
@@ -20,16 +21,16 @@ def main():
         
         for result in results:
             if result is not None:
-                print(f"Result: {result}")
+                Logger.info(f"Result: {result}")
     
     except FileNotFoundError:
-        print(f"Error: File '{filename}' not found")
+        Logger.error(f"File '{filename}' not found")
         sys.exit(1)
     except InterpreterError as e:
-        print(f"Error: {e}")
+        Logger.error(f"{e}")
         sys.exit(1)
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        Logger.error(f"Unexpected error: {e}")
         sys.exit(1)
 
 def run_code(code: str):
@@ -38,7 +39,7 @@ def run_code(code: str):
         results = interpreter.interpret(code)
         return results
     except InterpreterError as e:
-        print(f"Error: {e}")
+        Logger.error(f"{e}")
         return []
 
 if __name__ == "__main__":
