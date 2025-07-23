@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from typing import List, Any
-from memory import MemoryManager
+from .memory import MemoryManager
 
 class StandardLibrary:
     def __init__(self, memory_manager: MemoryManager=None):

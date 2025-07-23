@@ -46,7 +46,7 @@ class Logger:
         cls._log_level = level
     
     @classmethod
-    def enable(cls, enabled: bool = True):
+    def set_enabled(cls, enabled: bool = True):
         """ Set activation of logger """
         cls._enabled = enabled
     
@@ -80,7 +80,7 @@ class Logger:
         color = color_map.get(level, Style.WHITE)
 
         if level == LogLevel.PRINT:
-            return f"{color}\t{message}{Style.RESET}"
+            return f"{color}{message}{Style.RESET}"
         else:
             return f"{color}{level.value}{Style.RESET}:\t{message}"
     
@@ -138,20 +138,19 @@ class Logger:
             print(f"\n{Style.BLUE}=== {title} ==={Style.RESET}")
     
     @classmethod
-    def divider(cls):
+    def divider(cls, title: str = ""):
         """ Print a divider """
         length = shutil.get_terminal_size().columns
-        progress = 0
-
+        
         print("")
-
-        for _ in range(length):
-            filledLength = int(progress)
-            bar = "-" * filledLength
-            print(f"\r{bar}", end = "\r")
-
-            progress += 1
-
+        if title:
+            remaining_length = length - len(title) - 2
+            if remaining_length > 0:
+                print(f"{title} {'-' * remaining_length}")
+            else:
+                print(title)
+        else:
+            print("-" * length)
         print("")
 
     @classmethod
@@ -162,7 +161,6 @@ class Logger:
     @classmethod
     def title(cls):
         
-        # O U R O B O R O S .
         ascii_title = """
      OURO   BO  RO  SOURO    BORO   SOURO    BORO   SOURO    BORO    SOURO      
     BO  RO  SO  UR  OB  OR  OS  OU  RO  BO  RO  SO  UR  BO  RO  SO  UR     
@@ -189,6 +187,6 @@ class Logger:
         if console_width >= required_width:
             print(ascii_title)
             # print(ascii_logo)
-            print("C Language Interpreter Written by Python")
+            print("C language interpreter written in Python written in C.")
         else:
             print("Ouroboros")

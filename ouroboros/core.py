@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Ouroboros - C language interpreter written in Python
-"""
-
 from enum import Enum
 from typing import List, Optional
 

@@ -14,7 +14,7 @@ from .main import run_code
 
 __version__ = "1.0.0"
 __author__ = ""
-__description__ = "C language interpreter written in Python"
+__description__ = "C language interpreter written in Python written in C."
 
 __all__ = [
     'OuroborosInterpreter',
