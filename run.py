@@ -23,13 +23,12 @@ def execute_c_program(program: SampleProgram):
     
     Logger.divider("🚀 Execution Result:")
     try:
-        results = feed_to_ouroboros(program.code)
-        if results:
-            Logger.print("")
-            Logger.info(f"Program exit code: {results[-1]}")
+        feed_to_ouroboros(program.code)
+    
     except Exception as e:
         Logger.error(f"Execution error: {e}")
     
+    Logger.print("")
     Logger.section_end(f"{program.title} Completed")
 
 def show_sample_programs(manager: SampleProgramManager):
@@ -121,18 +120,16 @@ def load_and_run_file():
 def interactive_mode():
     """Execute C code in interactive mode"""
     Logger.header("💻 Interactive Mode")
-    Logger.print("Enter C language code")
-    Logger.print("For multi-line input, end input with an empty line")
-    Logger.print("Type 'exit' to quit interactive mode")
+    Logger.print("Enter your C language code")
+    Logger.print(f"To execute, hit {Style.GREEN}Enter{Style.RESET} twice")
+    Logger.print(f"To quit interactive mode, type {Style.RED}quit{Style.RED}")
     
     while True:
         try:
-            Logger.print("")
-            Logger.print("\nouroboros> ", end="")
             lines = []
             
             while True:
-                line = input()
+                line = input("ouroboros> ")
                 if line.strip().lower() == 'exit':
                     return
                 if not line.strip() and lines:  # Empty line ends input
