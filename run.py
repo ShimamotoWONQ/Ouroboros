@@ -1,37 +1,62 @@
 from ouroboros import run_code, Logger
-from sample_programs import SampleProgramManager, ProgramCategory
+from sample_programs import SampleProgramManager, SampleProgram, ProgramCategory
 
-def load_c_file(filename: str) -> str:
+def execute_c_program(program: SampleProgram):
+    
+    Logger.section_start(f"{program.title} Execution")
+
+    # プログラム情報の表示
+    if program.category:
+        Logger.print(f"📋 Category: {program.category.value}")
+    if program.difficulty:
+        Logger.print(f"⭐ Difficulty: {'⭐' * program.difficulty}")
+    if program.description:
+        Logger.print(f"📄 Description: {program.description}")
+    if program.notes:
+        Logger.print(f"📝 Notes: {program.notes}")
+    
+    # ソースコードの表示
+    Logger.divider("📄 Source Code:")
+    Logger.print(program.code)
+
+    # 期待される出力の表示
+    if program.expected_output:
+        Logger.divider("📋 Expected Output:")
+        Logger.print(program.expected_output.replace('\\n', '\n'))
+    
+    # 実行結果の表示
+    Logger.divider("🚀 Execution Result:")
     try:
-        with open(filename, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        Logger.error(f"File '{filename}' not found")
-        return ""
+        results = run_code(program.code)
+        if results:
+            Logger.info(f"Program exit code: {results[-1]}")
     except Exception as e:
-        Logger.error(f"File reading error: {e}")
-        return ""
+        Logger.error(f"Execution error: {e}")
+    
+    Logger.section_end(f"{program.title} Completed")
 
 def show_sample_programs(manager: SampleProgramManager):
-    """Display all available sample programs with enhanced information"""
+    """Display all available sample programs"""
     Logger.header("📝 Available Sample Programs")
     
     programs = manager.get_all_programs()
     for i, program in enumerate(programs, 1):
         difficulty_stars = "⭐" * program.difficulty
         category_emoji = {
-            ProgramCategory.BASIC: "🔤",
-            ProgramCategory.CONTROL_FLOW: "🔄",
-            ProgramCategory.FUNCTIONS: "⚙️",
-            ProgramCategory.ARRAYS: "📊",
-            ProgramCategory.STRINGS: "📝",
-            ProgramCategory.MEMORY: "🧠",
+            ProgramCategory.BASIC: "📔",
+            ProgramCategory.CONTROL_FLOW: "📖",
+            ProgramCategory.FUNCTIONS: "📕",
+            ProgramCategory.ARRAYS: "📘",
+            ProgramCategory.STRINGS: "📗",
+            ProgramCategory.MEMORY: "💾",
             ProgramCategory.ALGORITHMS: "🧮",
-            ProgramCategory.ADVANCED: "🚀"
+            ProgramCategory.ADVANCED: "🎓"
         }.get(program.category, "📋")
         
-        Logger.print(f"{i:2d}. {category_emoji} {program.title}")
-        Logger.print(f"     {difficulty_stars} | {program.category.value} | {program.description}")
+        Logger.print(f"{i:2d}. {category_emoji} {program.title} | {difficulty_stars}")
+        Logger.print(f"  | {program.category.value}")
+        Logger.print(f"  | {program.description}")
+        Logger.print("")
 
 def run_selected_program(manager: SampleProgramManager, program_index: int):
     """Execute the program at the specified index"""
@@ -39,58 +64,17 @@ def run_selected_program(manager: SampleProgramManager, program_index: int):
     
     if 1 <= program_index <= len(programs):
         program = programs[program_index - 1]
-        
-        Logger.section_start(f"{program.title} Execution")
-        Logger.print(f"📋 Category: {program.category.value}")
-        Logger.print(f"⭐ Difficulty: {'⭐' * program.difficulty}")
-        Logger.print(f"📄 Description: {program.description}")
-        
-        if program.notes:
-            Logger.print(f"📝 Notes: {program.notes}")
-        
-        Logger.divider("📄 Source Code:")
-        Logger.print(program.code)
-        Logger.divider()
-        
-        Logger.divider("🚀 Execution Result:")
-        try:
-            results = run_code(program.code)
-            if results:
-                Logger.info(f"Program exit code: {results[-1]}")
-        except Exception as e:
-            Logger.error(f"Execution error: {e}")
-        Logger.divider()
-        
-        if program.expected_output:
-            Logger.divider("📋 Expected Output:")
-            Logger.print(program.expected_output.replace('\\n', '\n'))
-            Logger.divider()
-        
-        Logger.section_end(f"{program.title} Completed")
+        execute_c_program(program)
     else:
         Logger.error("Invalid program number")
 
 def run_all_programs(manager: SampleProgramManager):
     """Execute all sample programs sequentially"""
     programs = manager.get_all_programs()
-    Logger.header(f"🔄 Execute All Sample Programs ({len(programs)} total)")
     
     for i, program in enumerate(programs, 1):
-        Logger.section_start(f"{i}/{len(programs)}: {program.title}")
-        Logger.print(f"📋 {program.category.value} | ⭐{'⭐' * (program.difficulty-1)}")
-        Logger.print("📄 Source Code:")
-        Logger.print(program.code)
-        Logger.marker()
-        
-        Logger.print("🚀 Execution Result:")
-        try:
-            results = run_code(program.code)
-            if results:
-                Logger.info(f"Exit code: {results[-1]}")
-        except Exception as e:
-            Logger.error(f"Execution error: {e}")
-        
-        Logger.section_end(f"{program.title} Completed")
+        Logger.header(f"🔄 Execute All Sample Programs ({i}/{len(programs)})")
+        execute_c_program(program)
         
         # Confirm before proceeding to next program
         if i < len(programs):
@@ -118,14 +102,12 @@ def interactive_mode():
             
             if lines:
                 code = '\n'.join(lines)
-                Logger.divider("🚀 Execution Result:")
-                try:
-                    results = run_code(code)
-                    if results:
-                        Logger.info(f"Result: {results[-1]}")
-                except Exception as e:
-                    Logger.error(f"Execution error: {e}")
-                Logger.divider()
+                execute_c_program(
+                    SampleProgram(
+                        code=code,
+                        title="Interactive Code Execution"
+                    )
+                )
                     
         except KeyboardInterrupt:
             Logger.info("\nExiting interactive mode")
@@ -133,6 +115,17 @@ def interactive_mode():
         except Exception as e:
             Logger.error(f"Error: {e}")
 
+def load_c_file(filename: str) -> str:
+    try:
+        with open(filename, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        Logger.error(f"File '{filename}' not found")
+        return ""
+    except Exception as e:
+        Logger.error(f"File reading error: {e}")
+        return ""
+    
 def load_and_run_file():
     """Load and execute a file"""
     Logger.header("📁 File Execution Mode")
@@ -144,64 +137,18 @@ def load_and_run_file():
     
     code = load_c_file(filename)
     if code:
-        Logger.print(f"📄 File '{filename}' loaded")
-        Logger.divider("Source Code:")
-        Logger.print(code)
-        Logger.divider()
-        
-        Logger.divider("🚀 Execution Result:")
-        try:
-            results = run_code(code)
-            if results:
-                Logger.info(f"Program exit code: {results[-1]}")
-        except Exception as e:
-            Logger.error(f"Execution error: {e}")
-        Logger.divider()
-
-def show_program_details(manager: SampleProgramManager, program_index: int):
-    """Display details of the specified program"""
-    programs = manager.get_all_programs()
-    
-    if 1 <= program_index <= len(programs):
-        program = programs[program_index - 1]
-        
-        Logger.header(f"📋 {program.title} - Details")
-        Logger.print(f"🆔 ID: {program.id}")
-        Logger.print(f"📂 Category: {program.category.value}")
-        Logger.print(f"⭐ Difficulty: {'⭐' * program.difficulty} ({program.difficulty}/5)")
-        Logger.print(f"📝 Description: {program.description}")
-        
-        if program.notes:
-            Logger.print(f"📄 Notes: {program.notes}")
-        
-        Logger.divider("Source Code:")
-        Logger.print(program.code)
-        Logger.divider()
-        
-        if program.expected_output:
-            Logger.divider("📋 Expected Output:")
-            Logger.print(program.expected_output.replace('\\n', '\n'))
-            Logger.divider()
-        
-        # Display code statistics
-        lines = program.code.split('\n')
-        non_empty_lines = [line for line in lines if line.strip()]
-        Logger.print(f"\n📊 Code Statistics:")
-        Logger.print(f"   Total lines: {len(lines)}")
-        Logger.print(f"   Non-empty lines: {len(non_empty_lines)}")
-        Logger.print(f"   Characters: {len(program.code)}")
-        
-        input("\nPress Enter to return...")
-    else:
-        Logger.error("Invalid program number")
+        execute_c_program(
+            code=code,
+            title=f"File '{filename}' Execution",
+        )
 
 def main():
-    # Initialize the sample program manager
     manager = SampleProgramManager()
     Logger.title()
     
     while True:
-        Logger.print(f"📚 {manager.get_program_count()} Sample Programs Available")
+        Logger.print("")
+        Logger.print(f"- {manager.get_program_count()} Sample Programs Available -")
         Logger.print("")
         Logger.print("1. Execute All Sample Programs")
         Logger.print("2. Execute Specific Sample Program")
