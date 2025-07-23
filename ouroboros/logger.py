@@ -161,32 +161,29 @@ class Logger:
     @classmethod
     def title(cls):
         
-        ascii_title = """
-     OURO   BO  RO  SOURO    BORO   SOURO    BORO   SOURO    BORO    SOURO      
-    BO  RO  SO  UR  OB  OR  OS  OU  RO  BO  RO  SO  UR  BO  RO  SO  UR     
-    OB  OR  OS  OU  ROBORO  SO  UR  OBORO   SO  UR  OBOROS  OU  RO   BORO  
-    SO  UR  OB  OR  OS OU   RO  BO  RO  SO  UR  OB  OR OS   OU  RO      BO 
-     ROSO    UROB   OR  OS   OURO   BOROS    OURO   BO  RO   SOUR   OBORO   S
+        package_title = """
+  ________________ |\\______________________________________________________________   
+ /################ ~>                                                              \\
+/##/¯¯¯¯¯¯¯¯¯¯¯¯¯¯ |/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\\  \\
+|##|    OURO   BO  RO  SOURO    BORO   SOURO    BORO   SOURO    BORO    SOURO    |  |
+|##|   BO  RO  SO  UR  OB  OR  OS  OU  RO  BO  RO  SO  UR  BO  RO  SO  UR        |  |
+|##|   OB  OR  OS  OU  ROBORO  SO  UR  OBORO   SO  UR  OBOROS  OU  RO   BORO     |  |
+|##|   SO  UR  OB  OR  OS OU   RO  BO  RO  SO  UR  OB  OR OS   OU  RO      BO    |  |
+|##|    ROSO    UROB   OR  OS   OURO   BOROS    OURO   BO  RO   SOUR   OBORO   S |  |
+\\##\\___________________________________________________________/| _______________/  /
+ \\############################################################# <~                 /
+  ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\\| ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
         """
 
-    #     ascii_logo = """
-    #      _
-    #    __|\____
-    #   /# ~>    \ 
-    #  /#/¯|/¯¯¯\ \ 
-    #  |#| ¯  _ | |
-    #  \#\___/|_/ /
-    #   \#### <~ /
-    #    ¯¯¯¯\|¯¯    
-    #         ¯
-    #     """
+        package_subtitle = """
+              - C language interpreter written in Python written in C. -              
+"""
         
-        required_width = max(len(line) for line in ascii_title.splitlines())
+        required_width = max(len(line) for line in package_title.splitlines())
         console_width = shutil.get_terminal_size().columns
 
         if console_width >= required_width:
-            print(ascii_title)
-            # print(ascii_logo)
-            print("C language interpreter written in Python written in C.")
+            print(f"{Style.BOLD}{Style.MAGENTA}{package_title}{Style.RESET}")
+            print(f"{Style.MAGENTA}{package_subtitle}{Style.RESET}")
         else:
             print("Ouroboros")
