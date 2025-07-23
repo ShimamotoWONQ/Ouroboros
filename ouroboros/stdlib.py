@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from typing import List, Any
+from memory import MemoryManager
 
 class StandardLibrary:
-    def __init__(self, memory_manager=None):
+    def __init__(self, memory_manager: MemoryManager=None):
         self.memory_manager = memory_manager
         self.functions = {
             'printf': self.printf,
@@ -64,7 +65,6 @@ class StandardLibrary:
                                 char_str += chr(char) if isinstance(char, int) else str(char)
                             result += char_str
                         elif isinstance(val, int) and self.memory_manager:
-                            # ポインタの場合、メモリから文字列を読み取り
                             try:
                                 char_str = ""
                                 offset = 0
@@ -76,14 +76,13 @@ class StandardLibrary:
                                     offset += 1
                                 result += char_str
                             except:
-                                result += f"0x{val:08x}"  # アドレス表示
+                                result += f"0x{val:08x}"
                         else:
                             result += str(val)
                         arg_index += 1
                     else:
                         result += ''
                 elif spec == 'p':
-                    # ポインタ表示
                     if arg_index < len(args):
                         val = args[arg_index]
                         if isinstance(val, int):
@@ -143,7 +142,6 @@ class StandardLibrary:
                         return i
                 return len(arg)
             elif isinstance(arg, int) and self.memory_manager:
-                # ポインタの場合、メモリから読み取り
                 try:
                     length = 0
                     while True:
@@ -162,7 +160,6 @@ class StandardLibrary:
             src = args[1]
             
             if isinstance(dest, int) and self.memory_manager:
-                # ポインタの場合
                 if isinstance(src, str):
                     for i, char in enumerate(src):
                         self.memory_manager.write_memory(dest, i, ord(char))
@@ -173,7 +170,6 @@ class StandardLibrary:
                         if char == 0:
                             break
                 elif isinstance(src, int) and self.memory_manager:
-                    # src もポインタの場合
                     offset = 0
                     while True:
                         char = self.memory_manager.read_memory(src, offset)
@@ -200,7 +196,6 @@ class StandardLibrary:
         return 0
     
     def malloc(self, args: List[Any]) -> int:
-        """メモリを確保し、アドレスを返す"""
         if not args or not self.memory_manager:
             return 0
         
@@ -213,7 +208,6 @@ class StandardLibrary:
             return 0
     
     def free(self, args: List[Any]) -> int:
-        """メモリを解放"""
         if not args or not self.memory_manager:
             return 0
         
@@ -228,7 +222,6 @@ class StandardLibrary:
             return -1
     
     def realloc(self, args: List[Any]) -> int:
-        """メモリを再確保"""
         if len(args) < 2 or not self.memory_manager:
             return 0
         
@@ -238,11 +231,9 @@ class StandardLibrary:
             new_address = self.memory_manager.realloc(address, new_size)
             return new_address
         except Exception as e:
-            print(f"realloc error: {e}")
             return 0
     
     def _get_string_value(self, arg: Any) -> str:
-        """引数から文字列値を取得するヘルパー関数"""
         if isinstance(arg, str):
             return arg
         elif isinstance(arg, list):
@@ -254,7 +245,6 @@ class StandardLibrary:
                 result += chr(char) if isinstance(char, int) else str(char)
             return result
         elif isinstance(arg, int) and self.memory_manager:
-            # ポインタの場合、メモリから読み取り
             try:
                 result = ""
                 offset = 0

@@ -13,7 +13,7 @@ from .logger import Logger
 from .main import run_code
 
 __version__ = "1.0.0"
-__author__ = "Ouroboros Team"
+__author__ = ""
 __description__ = "C language interpreter written in Python"
 
 __all__ = [

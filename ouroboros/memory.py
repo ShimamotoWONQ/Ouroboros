@@ -4,7 +4,6 @@ from typing import Dict, List, Tuple, Optional, Any
 from .errors import RuntimeError
 
 class MemoryBlock:
-    """メモリブロックを表現するクラス"""
     def __init__(self, address: int, size: int, data: List[Any] = None):
         self.address = address
         self.size = size
@@ -15,28 +14,23 @@ class MemoryBlock:
         return f"MemoryBlock(addr=0x{self.address:x}, size={self.size}, allocated={self.allocated})"
 
 class MemoryManager:
-    """メモリ管理システム"""
-    
     def __init__(self):
         self.heap: Dict[int, MemoryBlock] = {}  # address -> MemoryBlock
-        self.next_address = 0x1000  # ヒープの開始アドレス
-        self.free_blocks: List[Tuple[int, int]] = []  # (address, size) のフリーブロック
+        self.next_address = 0x1000  # Starting address of the heap
+        self.free_blocks: List[Tuple[int, int]] = []  # (address, size) 
         self.total_allocated = 0
         self.allocation_count = 0
     
     def malloc(self, size: int) -> int:
-        """メモリを確保し、アドレスを返す"""
+        """Allocates memory and returns the address"""
         if size <= 0:
             raise RuntimeError("malloc: Invalid size")
         
-        # フリーブロックから適切なサイズを探す
         address = self._find_free_block(size)
         if address is None:
-            # 新しいブロックを作成
             address = self.next_address
             self.next_address += size
         
-        # メモリブロックを作成
         block = MemoryBlock(address, size)
         self.heap[address] = block
         self.total_allocated += size
@@ -45,7 +39,7 @@ class MemoryManager:
         return address
     
     def free(self, address: int) -> bool:
-        """指定されたアドレスのメモリを解放"""
+        """Frees the memory at the specified address"""
         if address not in self.heap:
             raise RuntimeError(f"free: Invalid address 0x{address:x}")
         
@@ -53,18 +47,16 @@ class MemoryManager:
         if not block.allocated:
             raise RuntimeError(f"free: Double free detected at 0x{address:x}")
         
-        # ブロックを解放済みとしてマーク
         block.allocated = False
         self.total_allocated -= block.size
         
-        # フリーブロックリストに追加
         self.free_blocks.append((address, block.size))
         self._coalesce_free_blocks()
         
         return True
     
     def realloc(self, address: int, new_size: int) -> int:
-        """メモリブロックのサイズを変更"""
+        """Resize memory block"""
         if new_size <= 0:
             if address != 0:
                 self.free(address)
@@ -80,21 +72,18 @@ class MemoryManager:
         if not old_block.allocated:
             raise RuntimeError(f"realloc: Address already freed 0x{address:x}")
         
-        # 新しいメモリを確保
         new_address = self.malloc(new_size)
         new_block = self.heap[new_address]
         
-        # データをコピー（小さい方のサイズまで）
         copy_size = min(old_block.size, new_size)
         new_block.data[:copy_size] = old_block.data[:copy_size]
         
-        # 古いメモリを解放
         self.free(address)
         
         return new_address
     
     def read_memory(self, address: int, offset: int = 0) -> Any:
-        """指定されたアドレス+オフセットからデータを読み取り"""
+        """Reads data from the specified address & offset."""
         if address not in self.heap:
             raise RuntimeError(f"read_memory: Invalid address 0x{address:x}")
         
@@ -108,7 +97,7 @@ class MemoryManager:
         return block.data[offset]
     
     def write_memory(self, address: int, offset: int, value: Any) -> bool:
-        """指定されたアドレス+オフセットにデータを書き込み"""
+        """Writes data to the specified address & offset."""
         if address not in self.heap:
             raise RuntimeError(f"write_memory: Invalid address 0x{address:x}")
         
@@ -123,18 +112,18 @@ class MemoryManager:
         return True
     
     def get_block_size(self, address: int) -> int:
-        """指定されたアドレスのブロックサイズを取得"""
+        """Gets the block size of the specified address."""
         if address not in self.heap:
             raise RuntimeError(f"get_block_size: Invalid address 0x{address:x}")
         
         return self.heap[address].size
     
     def is_valid_address(self, address: int) -> bool:
-        """アドレスが有効かチェック"""
+        """Check if the address is valid"""
         return address in self.heap and self.heap[address].allocated
     
     def get_memory_info(self) -> Dict[str, Any]:
-        """メモリ使用状況を取得"""
+        """Get memory usage"""
         free_blocks_size = sum(size for _, size in self.free_blocks)
         allocated_blocks = sum(1 for block in self.heap.values() if block.allocated)
         
@@ -148,13 +137,11 @@ class MemoryManager:
         }
     
     def _find_free_block(self, size: int) -> Optional[int]:
-        """指定されたサイズに適合するフリーブロックを探す"""
+        """Find a free block that fits the specified size"""
         for i, (address, block_size) in enumerate(self.free_blocks):
             if block_size >= size:
-                # ブロックを使用
                 self.free_blocks.pop(i)
                 
-                # 残りのサイズがある場合は新しいフリーブロックとして追加
                 if block_size > size:
                     remaining_address = address + size
                     remaining_size = block_size - size
@@ -165,11 +152,10 @@ class MemoryManager:
         return None
     
     def _coalesce_free_blocks(self):
-        """連続するフリーブロックを結合"""
+        """Combine consecutive free blocks"""
         if len(self.free_blocks) <= 1:
             return
         
-        # アドレス順にソート
         self.free_blocks.sort(key=lambda x: x[0])
         
         coalesced = []
@@ -177,14 +163,11 @@ class MemoryManager:
         
         for addr, size in self.free_blocks[1:]:
             if current_addr + current_size == addr:
-                # 連続するブロックを結合
                 current_size += size
             else:
-                # 現在のブロックを保存し、新しいブロックを開始
                 coalesced.append((current_addr, current_size))
                 current_addr, current_size = addr, size
         
-        # 最後のブロックを追加
         coalesced.append((current_addr, current_size))
         
         self.free_blocks = coalesced

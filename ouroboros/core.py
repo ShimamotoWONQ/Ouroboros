@@ -7,13 +7,13 @@ from enum import Enum
 from typing import List, Optional
 
 class TokenType(Enum):
-    # リテラル
+    # literal
     NUMBER = "NUMBER"
     IDENTIFIER = "IDENTIFIER"
     STRING = "STRING"
     CHAR = "CHAR"
     
-    # 演算子
+    # operator
     PLUS = "PLUS"
     MINUS = "MINUS"
     MULTIPLY = "MULTIPLY"
@@ -21,18 +21,18 @@ class TokenType(Enum):
     MODULO = "MODULO"
     ASSIGN = "ASSIGN"
     
-    # 複合代入演算子
+    # Compound assignment operators
     PLUS_ASSIGN = "PLUS_ASSIGN"
     MINUS_ASSIGN = "MINUS_ASSIGN"
     MULTIPLY_ASSIGN = "MULTIPLY_ASSIGN"
     DIVIDE_ASSIGN = "DIVIDE_ASSIGN"
     MODULO_ASSIGN = "MODULO_ASSIGN"
     
-    # インクリメント・デクリメント
+    # Increment / Decrement
     INCREMENT = "INCREMENT"
     DECREMENT = "DECREMENT"
     
-    # 比較演算子
+    # comparison operator
     EQUAL = "EQUAL"
     NOT_EQUAL = "NOT_EQUAL"
     LESS = "LESS"
@@ -40,17 +40,17 @@ class TokenType(Enum):
     GREATER = "GREATER"
     GREATER_EQUAL = "GREATER_EQUAL"
     
-    # 論理演算子
+    # logical operators
     LOGICAL_AND = "LOGICAL_AND"
     LOGICAL_OR = "LOGICAL_OR"
     LOGICAL_NOT = "LOGICAL_NOT"
     
-    # ビット演算子
+    # bit operators
     BITWISE_AND = "BITWISE_AND"
     BITWISE_OR = "BITWISE_OR"
     BITWISE_XOR = "BITWISE_XOR"
     
-    # 区切り文字
+    # delimiter
     SEMICOLON = "SEMICOLON"
     COMMA = "COMMA"
     LPAREN = "LPAREN"
@@ -60,7 +60,7 @@ class TokenType(Enum):
     LBRACKET = "LBRACKET"
     RBRACKET = "RBRACKET"
     
-    # キーワード
+    # keyword
     INT = "INT"
     FLOAT = "FLOAT"
     DOUBLE = "DOUBLE"
@@ -78,7 +78,7 @@ class TokenType(Enum):
     CASE = "CASE"
     DEFAULT = "DEFAULT"
     
-    # 標準ライブラリ関数
+    # standard library functions
     PRINTF = "PRINTF"
     SCANF = "SCANF"
     GETS = "GETS"
@@ -89,11 +89,11 @@ class TokenType(Enum):
     MALLOC = "MALLOC"
     FREE = "FREE"
     
-    # プリプロセッサ
+    # preprocessor
     INCLUDE = "INCLUDE"
     DEFINE = "DEFINE"
     
-    # その他
+    # others
     NEWLINE = "NEWLINE"
     EOF = "EOF"
 
@@ -107,8 +107,6 @@ class Token:
         return f"Token({self.type}, '{self.value}')"
 
 class Lexer:
-    """拡張された字句解析器"""
-    
     def __init__(self, text: str):
         self.text = text
         self.pos = 0
@@ -162,13 +160,11 @@ class Lexer:
             self.pos += 1
     
     def skip_comment(self):
-        """コメントをスキップ"""
         if self.peek() == '/' and self.peek(1) == '/':
-            # 単行コメント
             while self.pos < len(self.text) and self.text[self.pos] != '\n':
                 self.advance()
+
         elif self.peek() == '/' and self.peek(1) == '*':
-            # 多行コメント
             self.advance()  # skip /
             self.advance()  # skip *
             while self.pos < len(self.text) - 1:
@@ -275,7 +271,6 @@ class Lexer:
                 self.advance()
                 return token
             
-            # コメントチェック
             if current_char == '/' and self.peek(1) in ['/', '*']:
                 self.skip_comment()
                 continue
@@ -294,7 +289,6 @@ class Lexer:
             if current_char == "'":
                 return Token(TokenType.CHAR, self.read_char(), self.line)
             
-            # 演算子の解析
             if current_char == '+':
                 if self.peek(1) == '+':
                     self.advance()
@@ -406,7 +400,6 @@ class Lexer:
                 self.advance()
                 return Token(TokenType.BITWISE_XOR, '^', self.line)
             
-            # 区切り文字
             if current_char == ';':
                 self.advance()
                 return Token(TokenType.SEMICOLON, ';', self.line)
@@ -439,7 +432,6 @@ class Lexer:
                 self.advance()
                 return Token(TokenType.RBRACKET, ']', self.line)
             
-            # プリプロセッサ
             if current_char == '#':
                 self.advance()
                 return Token(TokenType.INCLUDE, '#', self.line)
@@ -449,7 +441,6 @@ class Lexer:
         return Token(TokenType.EOF, '', self.line)
 
 class Function:
-    """関数オブジェクト"""
     def __init__(self, name: str, params: List[str], body: List, return_type: str = 'int'):
         self.name = name
         self.params = params
@@ -457,14 +448,11 @@ class Function:
         self.return_type = return_type
 
 class BreakException(Exception):
-    """break文用の例外"""
     pass
 
 class ContinueException(Exception):
-    """continue文用の例外"""
     pass
 
 class ReturnException(Exception):
-    """return文用の例外"""
     def __init__(self, value):
         self.value = value

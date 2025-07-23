@@ -66,7 +66,7 @@ class Declaration(Statement):
         self.size = size
         self.initializer = initializer
         self.dimensions = dimensions or []
-        self.pointer_level = pointer_level  # 0=通常, 1=*, 2=**, etc.
+        self.pointer_level = pointer_level  # 0=None, 1=*, 2=**, etc.
 
 class IfStatement(Statement):
     def __init__(self, condition: Expression, then_stmt: Statement, else_stmt: Optional[Statement] = None):

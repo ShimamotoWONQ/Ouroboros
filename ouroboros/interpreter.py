@@ -118,7 +118,6 @@ class OuroborosInterpreter:
         return result
     
     def execute_declaration(self, node: Declaration) -> Any:
-        # ポインタ変数の場合、初期値を0（NULL）に設定
         if node.pointer_level > 0:
             if node.value:
                 value = self.evaluator.evaluate(node.value)
@@ -128,7 +127,6 @@ class OuroborosInterpreter:
                 self.set_variable(node.name, 0)  # NULL pointer
                 return 0
         
-        # 既存の配列・通常変数処理
         if node.initializer:
             elements = self.evaluator.evaluate(node.initializer)
             
@@ -233,7 +231,6 @@ class OuroborosInterpreter:
             index = self.evaluator.evaluate(node.target.index)
             
             if isinstance(array, int) and hasattr(self, 'memory_manager'):
-                # ポインタの場合、メモリに書き込み
                 try:
                     self.memory_manager.write_memory(array, int(index), value)
                     return value

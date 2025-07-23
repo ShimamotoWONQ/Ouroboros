@@ -1,9 +1,9 @@
 from enum import Enum
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
+import shutil
 
 class LogLevel(Enum):
-    """ログレベル"""
     PRINT = "PRINT"
     DEBUG = "DEBUG"
     INFO = "INFO"
@@ -12,7 +12,6 @@ class LogLevel(Enum):
 
 
 class Style:
-    """ANSIカラーコード"""
     RED = '\033[91m'
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
@@ -26,15 +25,12 @@ class Style:
 
 @dataclass
 class LogEntry:
-    """ログエントリ"""
     level: LogLevel
     message: str
     data: Optional[Dict[str, Any]] = None
 
 
 class Logger:
-    """ログ出力クラス"""
-    
     _instance = None
     _log_level: LogLevel = LogLevel.DEBUG
     _enabled: bool = True
@@ -144,9 +140,10 @@ class Logger:
     @classmethod
     def divider(cls):
         """ Print a divider """
-        import shutil
         length = shutil.get_terminal_size().columns
         progress = 0
+
+        print("")
 
         for _ in range(length):
             filledLength = int(progress)
@@ -157,3 +154,41 @@ class Logger:
 
         print("")
 
+    @classmethod
+    def marker(cls):
+        """ Print a marker """
+        print(f"\n-*-*-*-*-*-\n")
+    
+    @classmethod
+    def title(cls):
+        
+        # O U R O B O R O S .
+        ascii_title = """
+     OURO   BO  RO  SOURO    BORO   SOURO    BORO   SOURO    BORO    SOURO      
+    BO  RO  SO  UR  OB  OR  OS  OU  RO  BO  RO  SO  UR  BO  RO  SO  UR     
+    OB  OR  OS  OU  ROBORO  SO  UR  OBORO   SO  UR  OBOROS  OU  RO   BORO  
+    SO  UR  OB  OR  OS OU   RO  BO  RO  SO  UR  OB  OR OS   OU  RO      BO 
+     ROSO    UROB   OR  OS   OURO   BOROS    OURO   BO  RO   SOUR   OBORO   S
+        """
+
+    #     ascii_logo = """
+    #      _
+    #    __|\____
+    #   /# ~>    \ 
+    #  /#/¯|/¯¯¯\ \ 
+    #  |#| ¯  _ | |
+    #  \#\___/|_/ /
+    #   \#### <~ /
+    #    ¯¯¯¯\|¯¯    
+    #         ¯
+    #     """
+        
+        required_width = max(len(line) for line in ascii_title.splitlines())
+        console_width = shutil.get_terminal_size().columns
+
+        if console_width >= required_width:
+            print(ascii_title)
+            # print(ascii_logo)
+            print("C Language Interpreter Written by Python")
+        else:
+            print("Ouroboros")

@@ -39,7 +39,6 @@ class Evaluator:
             index = self.evaluate(node.index)
             
             if isinstance(array, int) and hasattr(self.interpreter, 'memory_manager'):
-                # ポインタの場合、メモリから読み取り
                 try:
                     return self.interpreter.memory_manager.read_memory(array, int(index))
                 except Exception as e:
@@ -124,7 +123,6 @@ class Evaluator:
         elif node.op == TokenType.LOGICAL_NOT:
             return 1 if not self.evaluate(operand) else 0
         elif node.op == TokenType.DEREFERENCE:
-            # ポインタのデリファレンス *ptr
             address = self.evaluate(operand)
             if isinstance(address, int) and hasattr(self.interpreter, 'memory_manager'):
                 try:
@@ -134,10 +132,9 @@ class Evaluator:
             else:
                 raise RuntimeError("Cannot dereference non-pointer value")
         elif node.op == TokenType.ADDRESS_OF:
-            # 変数のアドレス取得 &var
             if isinstance(operand, Identifier):
                 # 簡単な実装：変数名のハッシュをアドレスとして使用
-                # 実際の実装では変数のメモリ位置を返すべき
+                # TODO: 実際に変数のメモリ位置を返すべき
                 return hash(operand.name) & 0xFFFFFF + 0x1000
             else:
                 raise RuntimeError("Cannot take address of non-lvalue")

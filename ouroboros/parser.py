@@ -84,7 +84,6 @@ class Parser:
         return self.expression_statement()
     
     def parse_type_with_pointers(self) -> Tuple[str, int]:
-        """型とポインタレベルを解析"""
         var_type = self.current_token.value
         self.eat(self.current_token.type)
         
@@ -426,28 +425,23 @@ class Parser:
             self.eat(self.current_token.type)
             return UnaryOp(token.type, self.postfix())
         
-        # ポインタ演算子
         if self.current_token.type == TokenType.MULTIPLY:
-            # デリファレンス演算子 *ptr
             token = self.current_token
             self.eat(TokenType.MULTIPLY)
             return UnaryOp(TokenType.DEREFERENCE, self.unary())
         
         if self.current_token.type == TokenType.BITWISE_AND:
-            # アドレス演算子 &var
             token = self.current_token
             self.eat(TokenType.BITWISE_AND)
             return UnaryOp(TokenType.ADDRESS_OF, self.unary())
         
         if self.current_token.type == TokenType.SIZEOF:
-            # sizeof演算子
             self.eat(TokenType.SIZEOF)
             self.eat(TokenType.LPAREN)
             if self.current_token.type in (TokenType.INT, TokenType.FLOAT, TokenType.DOUBLE, TokenType.CHAR_TYPE):
                 # sizeof(type)
                 type_name = self.current_token.value
                 self.eat(self.current_token.type)
-                # ポインタレベルをチェック
                 while self.current_token.type == TokenType.MULTIPLY:
                     self.eat(TokenType.MULTIPLY)
                 self.eat(TokenType.RPAREN)
@@ -535,8 +529,6 @@ class Parser:
             self.eat(TokenType.LPAREN)
             self.skip_newlines()
             
-            # 型キャストは無視してそのまま括弧式として処理
-            # 通常の括弧式
             node = self.expression()
             self.skip_newlines()
             self.eat(TokenType.RPAREN)

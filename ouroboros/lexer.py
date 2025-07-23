@@ -48,8 +48,8 @@ class TokenType(Enum):
     BITWISE_XOR = "BITWISE_XOR"
     
     # Pointer operators
-    DEREFERENCE = "DEREFERENCE"  # * (単項演算子として)
-    ADDRESS_OF = "ADDRESS_OF"    # & (単項演算子として)
+    DEREFERENCE = "DEREFERENCE"
+    ADDRESS_OF = "ADDRESS_OF"
     
     # Delimiters
     SEMICOLON = "SEMICOLON"
