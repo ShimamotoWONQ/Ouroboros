@@ -9,7 +9,7 @@ from .stdlib import StandardLibrary
 from .matrix import Matrix
 from .memory import MemoryManager, MemoryBlock
 from .errors import *
-from .logger import Logger
+from .logger import Logger, Style
 from .main import feed_to_ouroboros
 
 __version__ = "1.0.0"
@@ -35,5 +35,6 @@ __all__ = [
     'BreakException',
     'ContinueException',
     'ReturnException',
-    'Logger'
+    'Logger',
+    'Style'
 ]
