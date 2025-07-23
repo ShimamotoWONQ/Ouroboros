@@ -10,7 +10,7 @@ from .matrix import Matrix
 from .memory import MemoryManager, MemoryBlock
 from .errors import *
 from .logger import Logger
-from .main import run_code
+from .main import feed_to_ouroboros
 
 __version__ = "1.0.0"
 __author__ = ""
@@ -27,7 +27,7 @@ __all__ = [
     'Matrix',
     'MemoryManager',
     'MemoryBlock',
-    'run_code',
+    'feed_to_ouroboros',
     'InterpreterError',
     'LexerError',
     'ParserError',

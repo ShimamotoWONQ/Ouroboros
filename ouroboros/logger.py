@@ -135,7 +135,7 @@ class Logger:
     def header(cls, title: str):
         """ Print a header """
         if cls._should_log(LogLevel.INFO):
-            print(f"\n{Style.BLUE}=== {title} ==={Style.RESET}")
+            print(f"\n{Style.BOLD}{Style.BLUE}=== {title} ==={Style.RESET}")
     
     @classmethod
     def divider(cls, title: str = ""):

@@ -1,4 +1,4 @@
-from ouroboros import run_code, Logger
+from ouroboros import feed_to_ouroboros, Logger
 from sample_programs import SampleProgramManager, SampleProgram, ProgramCategory
 
 def execute_c_program(program: SampleProgram):
@@ -27,7 +27,7 @@ def execute_c_program(program: SampleProgram):
     # 実行結果の表示
     Logger.divider("🚀 Execution Result:")
     try:
-        results = run_code(program.code)
+        results = feed_to_ouroboros(program.code)
         if results:
             Logger.info(f"Program exit code: {results[-1]}")
     except Exception as e:

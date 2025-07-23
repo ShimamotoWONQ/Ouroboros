@@ -33,7 +33,7 @@ def main():
         Logger.error(f"Unexpected error: {e}")
         sys.exit(1)
 
-def run_code(code: str):
+def feed_to_ouroboros(code: str):
     try:
         interpreter = OuroborosInterpreter()
         results = interpreter.interpret(code)
