@@ -13,7 +13,7 @@ from .logger import Logger, Style
 from .main import feed_to_ouroboros
 
 __version__ = "1.0.0"
-__author__ = ""
+__author__ = "Classified"
 __description__ = "C language interpreter written in Python written in C."
 
 __all__ = [

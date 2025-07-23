@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from .lexer import Lexer, TokenType
 from .parser import Parser
 from .ast_nodes import *

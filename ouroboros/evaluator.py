@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 from .lexer import TokenType
 from .ast_nodes import *
 from .errors import RuntimeError

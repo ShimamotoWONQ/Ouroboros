@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+
+"""
+Touch Off Program for Ouroboros
+"""
+
 from ouroboros import feed_to_ouroboros, Logger, Style
 from sample_programs import SampleProgramManager, SampleProgram, ProgramCategory
 
@@ -65,7 +71,7 @@ def run_all_programs(manager: SampleProgramManager):
             
             # Confirm before proceeding to next program
             if i < len(programs):
-                input("\nPress Enter to continue / Press Ctrl + C to stop")
+                input(f"\nPress {Style.GREEN}Enter{Style.RESET} to continue / Press {Style.GREEN}Ctrl + C{Style.RESET} to stop")
     
     except KeyboardInterrupt:
         Logger.print("")
@@ -158,7 +164,7 @@ def main():
     
     while True:
         Logger.print("")
-        Logger.print(f"- {Style.BOLD}{Style.GREEN}{manager.get_program_count()}{Style.RESET} Sample Programs Available -")
+        Logger.print(f"- {Style.BOLD}{Style.BLUE}{manager.get_program_count()}{Style.RESET} Sample Programs Available -")
         Logger.print("")
         Logger.print("1. Execute All Sample Programs")
         Logger.print("2. Execute Specific Sample Program")
@@ -173,7 +179,6 @@ def main():
                 confirm = input(f"Execute all sample programs? {Style.YELLOW}(y/n){Style.RESET}: ").strip().lower()
                 if confirm in ['y', 'yes']:
                     run_all_programs(manager)
-                    input("\nPress Enter to return...")
                 else:
                     Logger.info("Cancelled")
 
@@ -182,13 +187,13 @@ def main():
                 try:
                     program_num = int(input(f"\nSelect program number to execute {Style.GREEN}(1-{manager.get_program_count()}){Style.RESET}: "))
                     run_selected_program(manager, program_num)
-                    input("\nPress Enter to return...")
+                    input(f"\nPress {Style.GREEN}Enter{Style.RESET} to return...")
                 except ValueError:
                     Logger.error("Invalid number")
-                    input("\nPress Enter to return...")
+                    input(f"\nPress {Style.GREEN}Enter{Style.RESET} to return...")
 
             elif choice == "3":
-                load_and_run_file()    
+                load_and_run_file()
 
             elif choice == "4":
                 interactive_mode()
@@ -199,7 +204,6 @@ def main():
                 
             else:
                 Logger.error(f"Invalid selection. Please enter a number {Style.GREEN}1-5{Style.RESET}")
-                input("\nPress Enter to return...")
         
         except KeyboardInterrupt:
             Logger.print("")
@@ -207,7 +211,7 @@ def main():
             break
         except Exception as e:
             Logger.error(f"{e}")
-            input("\nPress Enter to return...")
+            input(f"\nPress {Style.GREEN}Enter{Style.RESET} to return...")
 
 if __name__ == "__main__":
     main()

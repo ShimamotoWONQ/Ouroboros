@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from enum import Enum
 from typing import Optional, Dict, Any
 from dataclasses import dataclass

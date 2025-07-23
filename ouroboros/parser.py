@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from typing import List, Optional, Tuple
-from .lexer import Lexer, Token, TokenType
+from typing import Optional, Tuple
+from .lexer import Lexer, TokenType
 from .ast_nodes import *
 from .errors import ParserError
 
