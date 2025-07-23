@@ -19,12 +19,11 @@ class ProgramCategory(Enum):
 
 @dataclass
 class SampleProgram:
-    id: str
     title: str
-    description: str
-    category: ProgramCategory
-    difficulty: int
     code: str
+    description: Optional[str] = None
+    category: Optional[ProgramCategory] = None
+    difficulty: Optional[int] = None
     expected_output: Optional[str] = None
     notes: Optional[str] = None
 
@@ -39,7 +38,6 @@ class SampleProgramManager:
         # Basic Programming
         self.programs.extend([
             SampleProgram(
-                id="basic_hello",
                 title="Hello World",
                 description="Basic printf output",
                 category=ProgramCategory.BASIC,
@@ -52,7 +50,6 @@ class SampleProgramManager:
             ),
             
             SampleProgram(
-                id="basic_variables",
                 title="Variable Declaration and Operations",
                 description="Basic variable operations and arithmetic",
                 category=ProgramCategory.BASIC,
@@ -75,7 +72,6 @@ class SampleProgramManager:
         # Control Flow
         self.programs.extend([
             SampleProgram(
-                id="control_if_else",
                 title="Conditional Statements",
                 description="if-else statements and logical operators",
                 category=ProgramCategory.CONTROL_FLOW,
@@ -100,7 +96,6 @@ class SampleProgramManager:
             ),
             
             SampleProgram(
-                id="control_for_loop",
                 title="For Loop",
                 description="Basic for loop implementation",
                 category=ProgramCategory.CONTROL_FLOW,
@@ -115,7 +110,6 @@ class SampleProgramManager:
             ),
             
             SampleProgram(
-                id="control_while_loop",
                 title="While Loop",
                 description="While loop with counter",
                 category=ProgramCategory.CONTROL_FLOW,
@@ -135,7 +129,6 @@ class SampleProgramManager:
         # Functions
         self.programs.extend([
             SampleProgram(
-                id="func_basic",
                 title="Function Definition and Call",
                 description="Basic function definition and calling",
                 category=ProgramCategory.FUNCTIONS,
@@ -153,7 +146,6 @@ int main() {
             ),
             
             SampleProgram(
-                id="func_fibonacci",
                 title="Recursive Fibonacci",
                 description="Fibonacci sequence using recursion",
                 category=ProgramCategory.FUNCTIONS,
@@ -175,7 +167,6 @@ int main() {
             ),
             
             SampleProgram(
-                id="func_factorial",
                 title="Factorial Function",
                 description="Recursive factorial calculation",
                 category=ProgramCategory.FUNCTIONS,
@@ -199,7 +190,6 @@ int main() {
         # Arrays
         self.programs.extend([
             SampleProgram(
-                id="array_basic",
                 title="Array Operations",
                 description="Basic array declaration and manipulation",
                 category=ProgramCategory.ARRAYS,
@@ -218,7 +208,6 @@ int main() {
             ),
             
             SampleProgram(
-                id="array_bubble_sort",
                 title="Bubble Sort Algorithm",
                 description="Sorting array using bubble sort",
                 category=ProgramCategory.ARRAYS,
@@ -256,7 +245,6 @@ int main() {
             ),
             
             SampleProgram(
-                id="array_2d_matrix",
                 title="2D Array Matrix",
                 description="Two-dimensional array operations",
                 category=ProgramCategory.ARRAYS,
@@ -287,7 +275,6 @@ int main() {
         # String Processing
         self.programs.extend([
             SampleProgram(
-                id="string_basic",
                 title="String Operations",
                 description="Basic string manipulation",
                 category=ProgramCategory.STRINGS,
@@ -305,7 +292,6 @@ int main() {
             ),
             
             SampleProgram(
-                id="string_vowel_count",
                 title="Vowel Counter",
                 description="Count vowels and consonants in a string",
                 category=ProgramCategory.STRINGS,
@@ -337,7 +323,6 @@ int main() {
         # Memory Management
         self.programs.extend([
             SampleProgram(
-                id="memory_malloc_basic",
                 title="Dynamic Memory Allocation (simulation)",
                 description="Simulate basic malloc and free operations",
                 category=ProgramCategory.MEMORY,
@@ -365,7 +350,6 @@ int main() {
             ),
             
             SampleProgram(
-                id="memory_realloc",
                 title="Memory Reallocation (simulation)",
                 description="Simulate dynamic array expansion with realloc",
                 category=ProgramCategory.MEMORY,
@@ -405,7 +389,6 @@ int main() {
         # Mathematical Algorithms
         self.programs.extend([
             SampleProgram(
-                id="math_prime_check",
                 title="Prime Number Detection",
                 description="Check if numbers are prime",
                 category=ProgramCategory.ALGORITHMS,
@@ -438,7 +421,6 @@ int main() {
             ),
             
             SampleProgram(
-                id="math_gcd",
                 title="Greatest Common Divisor",
                 description="Calculate GCD using Euclidean algorithm",
                 category=ProgramCategory.ALGORITHMS,
@@ -465,7 +447,6 @@ int main() {
             ),
 
             SampleProgram(
-                id="math_pascal_triangle",
                 title="Pascal's Triangle Generator",
                 description="Generate Pascal's triangle using mathematical calculations",
                 category=ProgramCategory.ALGORITHMS,
@@ -511,7 +492,6 @@ int main() {
         # Advanced Features
         self.programs.extend([
             SampleProgram(
-                id="advanced_compound_ops",
                 title="Compound Assignment Operators",
                 description="Demonstration of +=, -=, *=, /= operators",
                 category=ProgramCategory.ADVANCED,
@@ -538,7 +518,6 @@ int main() {
             ),
             
             SampleProgram(
-                id="advanced_complex_logic",
                 title="Complex Logical Operations",
                 description="Complex conditional expressions and character analysis",
                 category=ProgramCategory.ADVANCED,

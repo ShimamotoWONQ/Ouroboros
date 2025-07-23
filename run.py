@@ -5,7 +5,6 @@ def execute_c_program(program: SampleProgram):
     
     Logger.section_start(f"{program.title} Execution")
 
-    # プログラム情報の表示
     if program.category:
         Logger.print(f"📋 Category: {program.category.value}")
     if program.difficulty:
@@ -15,16 +14,13 @@ def execute_c_program(program: SampleProgram):
     if program.notes:
         Logger.print(f"📝 Notes: {program.notes}")
     
-    # ソースコードの表示
     Logger.divider("📄 Source Code:")
     Logger.print(program.code)
 
-    # 期待される出力の表示
     if program.expected_output:
         Logger.divider("📋 Expected Output:")
         Logger.print(program.expected_output.replace('\\n', '\n'))
     
-    # 実行結果の表示
     Logger.divider("🚀 Execution Result:")
     try:
         results = feed_to_ouroboros(program.code)
@@ -34,6 +30,7 @@ def execute_c_program(program: SampleProgram):
         Logger.error(f"Execution error: {e}")
     
     Logger.section_end(f"{program.title} Completed")
+    Logger.print("")
 
 def show_sample_programs(manager: SampleProgramManager):
     """Display all available sample programs"""
@@ -129,17 +126,19 @@ def load_c_file(filename: str) -> str:
 def load_and_run_file():
     """Load and execute a file"""
     Logger.header("📁 File Execution Mode")
-    filename = input("Enter C file name to execute: ").strip()
+    filepath = input("Enter C file path to execute: ").strip()
     
-    if not filename:
-        Logger.error("No filename entered")
+    if not filepath:
+        Logger.error("No filepath entered")
         return
     
-    code = load_c_file(filename)
+    code = load_c_file(filepath)
     if code:
         execute_c_program(
-            code=code,
-            title=f"File '{filename}' Execution",
+            SampleProgram(
+                title=f"'{filepath}' Execution",
+                code=code,
+            )
         )
 
 def main():
