@@ -8,7 +8,7 @@ from typing import List, Dict, Optional
 from enum import Enum
 
 class ProgramCategory(Enum):
-    BASIC = "Basic Programming"
+    BASIC = "Basic"
     CONTROL_FLOW = "Control Flow"
     FUNCTIONS = "Functions"
     ARRAYS = "Arrays"
@@ -23,7 +23,7 @@ class SampleProgram:
     title: str
     description: str
     category: ProgramCategory
-    difficulty: int  # 1-5 scale
+    difficulty: int
     code: str
     expected_output: Optional[str] = None
     notes: Optional[str] = None
@@ -44,9 +44,7 @@ class SampleProgramManager:
                 description="Basic printf output",
                 category=ProgramCategory.BASIC,
                 difficulty=1,
-                code='''
-
-int main() {
+                code='''int main() {
     printf("Hello, World!\\n");
     return 0;
 }''',
@@ -340,8 +338,8 @@ int main() {
         self.programs.extend([
             SampleProgram(
                 id="memory_malloc_basic",
-                title="Dynamic Memory Allocation",
-                description="Basic malloc and free operations",
+                title="Dynamic Memory Allocation (simulation)",
+                description="Simulate basic malloc and free operations",
                 category=ProgramCategory.MEMORY,
                 difficulty=4,
                 code='''int main() {
@@ -368,8 +366,8 @@ int main() {
             
             SampleProgram(
                 id="memory_realloc",
-                title="Memory Reallocation",
-                description="Dynamic array expansion with realloc",
+                title="Memory Reallocation (simulation)",
+                description="Simulate dynamic array expansion with realloc",
                 category=ProgramCategory.MEMORY,
                 difficulty=5,
                 code='''int main() {
@@ -465,6 +463,49 @@ int main() {
 }''',
                 expected_output="GCD(48, 18) = 6\nGCD(56, 98) = 14\n"
             ),
+
+            SampleProgram(
+                id="math_pascal_triangle",
+                title="Pascal's Triangle Generator",
+                description="Generate Pascal's triangle using mathematical calculations",
+                category=ProgramCategory.ALGORITHMS,
+                difficulty=3,
+                code='''int main() {
+    int rows = 6;
+    
+    printf("Pascal's Triangle (first %d rows):\\n", rows);
+    
+    for (int i = 0; i < rows; i++) {
+        // Print leading spaces for centering
+        for (int j = 0; j < rows - i - 1; j++) {
+            printf("   ");
+        }
+        
+        int val = 1;
+        for (int j = 0; j <= i; j++) {
+            if (j == 0) {
+                printf("%d", val);
+            } else {
+                printf("     %d", val);
+            }
+            val = val * (i - j) / (j + 1);
+        }
+        printf("\\n");
+    }
+    
+    return 0;
+}''',
+                expected_output='''Pascal's Triangle (first 6 rows):
+               1
+            1     1
+         1     2     1
+      1     3     3     1
+   1     4     6     4     1
+1     5     10    10    5     1
+
+''',
+                notes="Demonstrates mathematical calculations, nested loops, and pattern generation with proper formatting"
+)
         ])
         
         # Advanced Features
@@ -569,15 +610,3 @@ int main() {
         for category in self.get_categories():
             count_dict[category] = len(self.get_programs_by_category(category))
         return count_dict
-
-# For backward compatibility with existing code
-sample_programs = []
-
-def initialize_sample_programs():
-    """Initialize the legacy sample_programs list for backward compatibility"""
-    global sample_programs
-    manager = SampleProgramManager()
-    sample_programs = [program.code for program in manager.get_all_programs()]
-
-# Initialize on import
-initialize_sample_programs()
